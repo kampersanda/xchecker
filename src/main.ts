@@ -3,8 +3,11 @@ import * as WebFont from "webfontloader"
 import TRIE = require("./trie");
 
 // let app: PIXI.Application;
-let app = new PIXI.Application({ width: window.innerWidth, height: window.innerHeight, transparent: true, antialias: true });
-let element: any = document.getElementById('app');
+const app = new PIXI.Application({ width: window.innerWidth, height: window.innerHeight, transparent: true, antialias: true });
+app.renderer.plugins.interaction.autoPreventDefault = false;
+app.renderer.view.style.touchAction = 'auto';
+
+const element: any = document.getElementById('app');
 element.appendChild(app.view);
 
 // Variables
@@ -14,13 +17,9 @@ let alphSize = 4;
 const elemWidth = 50;
 const elemHeight = 50;
 
-const FontFamily = 'M PLUS Rounded 1c';
-const textStyle = { fontFamily: FontFamily, fontSize: 26, fill: 0x000000 };
-
-const EnterKey = keyboard("Enter", () => { }, () => { });
-const LeftKey = keyboard("ArrowLeft", () => { }, () => { });
-const RightKey = keyboard("ArrowRight", () => { }, () => { });
-const DownKey = keyboard("ArrowDown", () => { }, () => { });
+const FontFamily = 'MPLUSRounded1c-Regular';
+const TitleFamily = "\"Comic Sans MS\", cursive, sans-serif";
+const TextStyle = { fontFamily: FontFamily, fontSize: 26, fill: 0x000000 };
 
 const Palette = {
     Black: '#000000',
@@ -29,7 +28,6 @@ const Palette = {
     Yellow: '#FEC907',
     Blue: '#1373C7',
 }
-
 enum Difficulty {
     Easy,
     Hard,
@@ -43,20 +41,13 @@ const bcHeaderWidth = 2.2 * elemWidth;
 const edgeMarginTop = elemHeight * 0.8;
 const bcMarginTop = edgeMarginTop + elemHeight * 2;
 
-const nodeRadius = 25;
-const nodeMargin = 100;
 
 const CodeTable = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 
-function timer() {
-    let timeStart = new Date().getTime();
-    return {
-        get seconds() {
-            const sec = (new Date().getTime() - timeStart) / 1000;
-            return sec.toFixed(1) + 's';
-        },
-    }
-}
+const EnterKey = keyboard("Enter", () => { }, () => { });
+const LeftKey = keyboard("ArrowLeft", () => { }, () => { });
+const RightKey = keyboard("ArrowRight", () => { }, () => { });
+const DownKey = keyboard("ArrowDown", () => { }, () => { });
 
 function keyboard(value: string, press: (arg: void) => void, release: (arg: void) => void) {
     let key = {
@@ -108,6 +99,41 @@ function keyboard(value: string, press: (arg: void) => void, release: (arg: void
     return key;
 }
 
+function timer() {
+    let timeStart = new Date().getTime();
+    return {
+        get seconds() {
+            const sec = (new Date().getTime() - timeStart) / 1000;
+            return sec.toFixed(1) + 's';
+        },
+    }
+}
+
+let state: (delta: number) => void;
+let willRetry = false;
+
+function setup() {
+    willRetry = false;
+
+    SelectMode.setup();
+    state = SelectMode.doWork;
+
+    app.ticker.add(delta => gameLoop(delta));
+}
+
+function gameLoop(delta: number) {
+    if (willRetry) {
+        app.stage.removeChildren();
+        willRetry = false;
+        SelectMode.setup();
+        state = SelectMode.doWork;
+    } else if (!SelectMode.nowWorking() && state != PlayMode.doWork) {
+        PlayMode.setup();
+        state = PlayMode.doWork;
+    }
+    state(delta);
+}
+
 namespace SelectMode {
     const MainWidth = 600;
     const MainHeight = 600;
@@ -125,7 +151,6 @@ namespace SelectMode {
     let difficulty = Difficulty.Easy;
 
     const Description =
-        // ここから・・・・・・・・・・・ここまで
         'トライからダブル配列を構築するゲームです\n' +
         '隙間なく要素を配置できればクリアです\n' +
         '（方向キーで操作します）';
@@ -141,8 +166,7 @@ namespace SelectMode {
             .endFill();
         mainContainer.addChild(mainGraphics);
 
-        // titleText = new PIXI.Text('XCHECKER', { fontFamily: FontFamily, fontSize: 80, stroke: Palette.Black, fill: Palette.White, strokeThickness: 12 });
-        titleText = new PIXI.Text('XCHECKER', { fontFamily: FontFamily, fontSize: 80, stroke: Palette.Black, fill: Palette.Black, strokeThickness: 5 });
+        titleText = new PIXI.Text('XCHECKER', { fontFamily: TitleFamily, fontSize: 80, stroke: Palette.Black, fill: Palette.Black, strokeThickness: 5 });
         titleText.position.set(300, 100);
         titleText.anchor.set(0.5, 0.5);
         mainContainer.addChild(titleText);
@@ -184,6 +208,7 @@ namespace SelectMode {
             indicatorText.visible = !indicatorText.visible;
             counter = 0;
         }
+
         if (LeftKey.isDown && !LeftKey.isProcessed) {
             LeftKey.isProcessed = true;
             difficulty = Difficulty.Easy;
@@ -224,6 +249,9 @@ namespace PlayMode {
     const InfoTopMargin = 20;
     const InfoWeight = 800;
     const InfoHeight = 100;
+
+    const NodeRadius = 25;
+    const NodeMargin = 100;
 
     // The game scene
     let mainContainer: PIXI.Container;
@@ -289,17 +317,17 @@ namespace PlayMode {
          */
         infoContainer = new PIXI.Container();
 
-        timerText = new PIXI.Text('', textStyle);
+        timerText = new PIXI.Text('', TextStyle);
         timerText.position.set(0, InfoHeight / 2);
         timerText.anchor.set(0.0, 0.5);
         infoContainer.addChild(timerText);
 
-        helpText = new PIXI.Text('移動：左右キー\n配置：下キー\n戻る：ENTER', textStyle);
+        helpText = new PIXI.Text('移動：左右キー\n配置：下キー\n戻る：ENTER', TextStyle);
         helpText.position.set(InfoWeight, InfoHeight / 2);
         helpText.anchor.set(1.0, 0.5);
         infoContainer.addChild(helpText);
 
-        resultText = new PIXI.Text('', { fontFamily: FontFamily, fontSize: 48, fill: 0x000000 });
+        resultText = new PIXI.Text('', { fontFamily: FontFamily, fontSize: 64, fill: 0x000000 });
         resultText.position.set(InfoWeight / 2, InfoHeight / 2);
         resultText.anchor.set(0.5, 0.5);
         infoContainer.addChild(resultText);
@@ -485,16 +513,16 @@ namespace PlayMode {
             let curr = queue[0];
             queue.shift();
 
-            const x = curr.node.offset * nodeMargin + (nodeMargin / 2);
-            const y = curr.node.level * nodeMargin + (nodeMargin / 2);
+            const x = curr.node.offset * NodeMargin + (NodeMargin / 2);
+            const y = curr.node.level * NodeMargin + (NodeMargin / 2);
 
             nodeGraphics[curr.node.nodeId] = new PIXI.Graphics()
                 .lineStyle(3, 0x000000)
                 .beginFill(0xffffff)
-                .drawCircle(x, y, nodeRadius)
+                .drawCircle(x, y, NodeRadius)
                 .endFill();
 
-            nodeTexts[curr.node.nodeId] = new PIXI.Text(`${curr.node.nodeId}`, textStyle);
+            nodeTexts[curr.node.nodeId] = new PIXI.Text(`${curr.node.nodeId}`, TextStyle);
             nodeTexts[curr.node.nodeId].position.set(x, y);
             nodeTexts[curr.node.nodeId].anchor.set(0.5, 0.5);
 
@@ -505,12 +533,12 @@ namespace PlayMode {
                     .lineStyle(3, 0x000000)
                     .moveTo(pt.x, pt.y)
                     .lineTo(nt.x, pt.y)
-                    .lineTo(nt.x, nt.y - nodeRadius)
-                    .lineTo(nt.x - nodeRadius / 3, nt.y - nodeRadius - nodeRadius / 2.5)
-                    .moveTo(nt.x + nodeRadius / 3, nt.y - nodeRadius - nodeRadius / 2.5)
-                    .lineTo(nt.x, nt.y - nodeRadius);
-                edgeTexts[curr.node.nodeId] = new PIXI.Text(`${CodeTable[curr.node.inEdge]}`, textStyle);
-                edgeTexts[curr.node.nodeId].position.set(x - (nodeMargin / 4.5), y - (nodeMargin / 1.8));
+                    .lineTo(nt.x, nt.y - NodeRadius)
+                    .lineTo(nt.x - NodeRadius / 3, nt.y - NodeRadius - NodeRadius / 2.5)
+                    .moveTo(nt.x + NodeRadius / 3, nt.y - NodeRadius - NodeRadius / 2.5)
+                    .lineTo(nt.x, nt.y - NodeRadius);
+                edgeTexts[curr.node.nodeId] = new PIXI.Text(`${CodeTable[curr.node.inEdge]}`, TextStyle);
+                edgeTexts[curr.node.nodeId].position.set(x - (NodeMargin / 4.5), y - (NodeMargin / 1.8));
                 edgeTexts[curr.node.nodeId].anchor.set(0.5, 0.5);
             }
 
@@ -525,7 +553,7 @@ namespace PlayMode {
         for (let j = 0; j < names.length; j++) {
             const x = width / 2;
             const y = j * elemHeight + (elemHeight / 2);
-            objs[j] = new PIXI.Text(names[j], textStyle);
+            objs[j] = new PIXI.Text(names[j], TextStyle);
             objs[j].position.set(x, y);
             objs[j].anchor.set(0.5, 0.5);
             container.addChild(objs[j]);
@@ -538,7 +566,7 @@ namespace PlayMode {
         for (let i = 0; i < size; i++) {
             const x = i * elemWidth;
             const idx = isCode ? `${CodeTable[i]}` : `${i}`;
-            objs[i] = new PIXI.Text(idx, textStyle);
+            objs[i] = new PIXI.Text(idx, TextStyle);
             objs[i].position.set(x + (elemWidth / 2), elemHeight / 2);
             objs[i].anchor.set(0.5, 0.5);
             container.addChild(objs[i]);
@@ -550,7 +578,7 @@ namespace PlayMode {
         let objs = new Array<PIXI.Text>(size);
         for (let i = 0; i < size; i++) {
             const x = i * elemWidth;
-            objs[i] = new PIXI.Text('', textStyle);
+            objs[i] = new PIXI.Text('', TextStyle);
             objs[i].position.set(x + (elemWidth / 2), elemHeight / 2);
             objs[i].anchor.set(0.5, 0.5);
             container.addChild(objs[i]);
@@ -611,7 +639,7 @@ namespace PlayMode {
         const baseInt = Math.floor(baseValue);
         baseBodyTexts[curr.bcPos].visible = true;
         baseBodyTexts[curr.bcPos].text = `${baseInt}`;
-        baseBodyTexts[curr.bcPos].style = textStyle;
+        baseBodyTexts[curr.bcPos].style = TextStyle;
 
         for (let c = 0; c < alphSize; c++) {
             if (!targetBodyTexts[c].visible) {
@@ -650,42 +678,20 @@ namespace PlayMode {
     }
 } // PlayMode
 
-let state: (delta: number) => void;
-let willRetry = false;
-
-function setup() {
-    willRetry = false;
-
-    SelectMode.setup();
-    state = SelectMode.doWork;
-
-    app.ticker.add(delta => gameLoop(delta));
-}
-
-function gameLoop(delta: number) {
-    if (willRetry) {
-        app.stage.removeChildren();
-        willRetry = false;
-        SelectMode.setup();
-        state = SelectMode.doWork;
-    } else if (!SelectMode.nowWorking() && state != PlayMode.doWork) {
-        PlayMode.setup();
-        state = PlayMode.doWork;
-    }
-    state(delta);
-}
-
 WebFont.load({
-    google: { families: [FontFamily] },
-    loading: () => {
-        console.log('フォント読み込み中。');
+    // ! GoogleWebFontではなんか上手く作動しない
+    // 解決しなかったのでダウンロードして使った
+    // google: { families: [FontFamily] },
+    custom: {
+        families: [FontFamily],
+        urls: ['./font.css'],
     },
     active: () => {
-        console.log('フォント読み込み成功しました。');
+        // alert('フォント読み込み成功しました。');
         setup();
     },
     inactive: () => {
-        console.log('フォント読み込み失敗しました。');
+        alert('フォント読み込み失敗しました。');
         setup();
     },
 });

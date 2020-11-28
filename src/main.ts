@@ -1,86 +1,527 @@
 import * as PIXI from "pixi.js"
+import * as WebFont from "webfontloader"
 import TRIE = require("./trie");
 
-namespace XChecker {
-    let app = new PIXI.Application({ width: 1000, height: 800, backgroundColor: 0xd3d3d3 });
-    let element: any = document.getElementById('app');
-    element.appendChild(app.view);
+// let app: PIXI.Application;
+let app = new PIXI.Application({ width: window.innerWidth, height: window.innerHeight, transparent: true, antialias: true });
+let element: any = document.getElementById('app');
+element.appendChild(app.view);
 
-    // const loader = new PIXI.Loader();
-    // loader.load(setup);
+// Variables
+let bcSize = 16;
+let alphSize = 4;
 
-    // Variables
-    const bcSize = 16;
-    const edgeSize = 4;
+const elemWidth = 50;
+const elemHeight = 50;
 
-    const elemWidth = 50;
-    const elemHeight = 50;
+const FontFamily = 'M PLUS Rounded 1c';
+const textStyle = { fontFamily: FontFamily, fontSize: 26, fill: 0x000000 };
 
-    const textStyle = { fontSize: 25, fill: 0x000000 };
+const EnterKey = keyboard("Enter", () => { }, () => { });
+const LeftKey = keyboard("ArrowLeft", () => { }, () => { });
+const RightKey = keyboard("ArrowRight", () => { }, () => { });
+const DownKey = keyboard("ArrowDown", () => { }, () => { });
 
-    let leftKey = keyboard("ArrowLeft", () => { }, () => { });
-    let rightKey = keyboard("ArrowRight", () => { }, () => { });
-    let downKey = keyboard("ArrowDown", () => { }, () => { });
+const Palette = {
+    Black: '#000000',
+    White: '#FFFFFF',
+    Red: '#ED1C22',
+    Yellow: '#FEC907',
+    Blue: '#1373C7',
+}
 
-    const [posLists, edgeLists] = TRIE.makeSolutions(bcSize, edgeSize);
-    const rootNode = TRIE.makeTrie(edgeLists);
+enum Difficulty {
+    Easy,
+    Hard,
+}
 
-    let baseValue = 0;
-    let nodeQueue: Array<{ node: TRIE.Node, bcPos: number }>;
+let edgeLeftOrigin = 0;
 
-    let collisionChecked = false;
-    let finished = false;
+const indexHeightOffset = elemHeight * 0.15;
+const bcHeaderWidth = 2.2 * elemWidth;
 
-    function keyboard(value: string, press: (arg: void) => void, release: (arg: void) => void) {
-        let key = {
-            value: value,
-            isDown: false,
-            isUp: true,
-            press: press,
-            release: release,
-            downHandler: (arg: KeyboardEvent) => { },
-            upHandler: (arg: KeyboardEvent) => { },
-            unsubscribe: () => { },
-        };
+const edgeMarginTop = elemHeight * 0.8;
+const bcMarginTop = edgeMarginTop + elemHeight * 2;
 
-        key.downHandler = (event: KeyboardEvent) => {
-            if (event.key === key.value) {
-                if (key.isUp && key.press()) {
-                    key.press();
-                }
-                key.isDown = true;
-                key.isUp = false;
-                event.preventDefault();
+const nodeRadius = 25;
+const nodeMargin = 100;
+
+const CodeTable = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+
+function timer() {
+    let timeStart = new Date().getTime();
+    return {
+        get seconds() {
+            const sec = (new Date().getTime() - timeStart) / 1000;
+            return sec.toFixed(1) + 's';
+        },
+    }
+}
+
+function keyboard(value: string, press: (arg: void) => void, release: (arg: void) => void) {
+    let key = {
+        value: value,
+        isDown: false,
+        isUp: true,
+        isProcessed: false,
+        press: press,
+        release: release,
+        downHandler: (arg: KeyboardEvent) => { },
+        upHandler: (arg: KeyboardEvent) => { },
+        unsubscribe: () => { },
+    };
+
+    key.downHandler = (event: KeyboardEvent) => {
+        if (event.key === key.value) {
+            if (key.isUp && key.press()) {
+                key.press();
             }
-        };
-        key.upHandler = (event: KeyboardEvent) => {
-            if (event.key === key.value) {
-                if (key.isDown && key.release) {
-                    key.release();
-                }
-                key.isDown = false;
-                key.isUp = true;
-                event.preventDefault();
+            key.isDown = true;
+            key.isUp = false;
+            event.preventDefault();
+        }
+    };
+    key.upHandler = (event: KeyboardEvent) => {
+        if (event.key === key.value) {
+            if (key.isDown && key.release) {
+                key.release();
             }
-        };
+            key.isDown = false;
+            key.isUp = true;
+            key.isProcessed = false;
+            event.preventDefault();
+        }
+    };
 
-        //Attach event listeners
-        const downListener = key.downHandler.bind(key);
-        const upListener = key.upHandler.bind(key);
+    //Attach event listeners
+    const downListener = key.downHandler.bind(key);
+    const upListener = key.upHandler.bind(key);
 
-        window.addEventListener("keydown", downListener, false);
-        window.addEventListener("keyup", upListener, false);
+    window.addEventListener("keydown", downListener, false);
+    window.addEventListener("keyup", upListener, false);
 
-        // Detach event listeners
-        key.unsubscribe = () => {
-            window.removeEventListener("keydown", downListener);
-            window.removeEventListener("keyup", upListener);
-        };
-        return key;
+    // Detach event listeners
+    key.unsubscribe = () => {
+        window.removeEventListener("keydown", downListener);
+        window.removeEventListener("keyup", upListener);
+    };
+    return key;
+}
+
+namespace SelectMode {
+    const MainWidth = 600;
+    const MainHeight = 600;
+
+    let mainContainer: PIXI.Container;
+    let mainGraphics: PIXI.Graphics;
+    let titleText: PIXI.Text;
+    let easyText: PIXI.Text;
+    let hardText: PIXI.Text;
+    let indicatorText: PIXI.Text;
+    let descText: PIXI.Text;
+    let licenseText: PIXI.Text;
+
+    let counter = 0;
+    let difficulty = Difficulty.Easy;
+
+    const Description =
+        // ここから・・・・・・・・・・・ここまで
+        'トライからダブル配列を構築するゲームです\n' +
+        '隙間なく要素を配置できればクリアです\n' +
+        '（方向キーで操作します）';
+
+    export function setup() {
+        console.log('SelectMode.setup');
+
+        mainContainer = new PIXI.Container();
+        mainGraphics = new PIXI.Graphics()
+            .lineStyle(10, 0x000000)
+            .beginFill(0xffffff)
+            .drawRect(0, 0, MainWidth, MainHeight)
+            .endFill();
+        mainContainer.addChild(mainGraphics);
+
+        // titleText = new PIXI.Text('XCHECKER', { fontFamily: FontFamily, fontSize: 80, stroke: Palette.Black, fill: Palette.White, strokeThickness: 12 });
+        titleText = new PIXI.Text('XCHECKER', { fontFamily: FontFamily, fontSize: 80, stroke: Palette.Black, fill: Palette.Black, strokeThickness: 5 });
+        titleText.position.set(300, 100);
+        titleText.anchor.set(0.5, 0.5);
+        mainContainer.addChild(titleText);
+
+        easyText = new PIXI.Text('Easy', { fontFamily: FontFamily, fontSize: 44, fill: Palette.Blue });
+        easyText.position.set(MainWidth / 4 + 20, 240);
+        easyText.anchor.set(0.5, 0.5);
+        mainContainer.addChild(easyText);
+
+        hardText = new PIXI.Text('Hard', { fontFamily: FontFamily, fontSize: 44, fill: Palette.Red });
+        hardText.position.set(MainWidth / 4 * 3 - 20, 240);
+        hardText.anchor.set(0.5, 0.5);
+        mainContainer.addChild(hardText);
+
+        indicatorText = new PIXI.Text('Press Enter', { fontFamily: FontFamily, fontSize: 32 });
+        indicatorText.position.set(MainWidth / 2, 330);
+        indicatorText.anchor.set(0.5, 0.5);
+        mainContainer.addChild(indicatorText);
+
+        descText = new PIXI.Text(Description, { fontFamily: FontFamily, fontSize: 26, fill: Palette.Black, align: 'center' });
+        descText.position.set(MainWidth / 2, 400);
+        descText.anchor.set(0.5, 0);
+        mainContainer.addChild(descText);
+
+        licenseText = new PIXI.Text('Created by Kampersanda', { fontFamily: FontFamily, fontSize: 26, fill: '#808080' });
+        licenseText.position.set(MainWidth / 2, 550);
+        licenseText.anchor.set(0.5, 0);
+        mainContainer.addChild(licenseText);
+
+        mainContainer.pivot.set(mainContainer.width / 2, 0);
+        mainContainer.position.set(window.innerWidth / 2, 100);
+
+        app.stage.addChild(mainContainer);
+    }
+
+    export function doWork(delta: number) {
+        counter += delta;
+        if (counter > 35) {
+            indicatorText.visible = !indicatorText.visible;
+            counter = 0;
+        }
+        if (LeftKey.isDown && !LeftKey.isProcessed) {
+            LeftKey.isProcessed = true;
+            difficulty = Difficulty.Easy;
+        }
+        if (RightKey.isDown && !RightKey.isProcessed) {
+            RightKey.isProcessed = true;
+            difficulty = Difficulty.Hard;
+        }
+
+        if (difficulty == Difficulty.Easy) {
+            easyText.style.fill = Palette.Blue;
+            easyText.style.fontSize = 64;
+            hardText.style.fill = Palette.Black;
+            hardText.style.fontSize = 44;
+            bcSize = 16;
+            alphSize = 4;
+        } else {
+            easyText.style.fill = Palette.Black;
+            easyText.style.fontSize = 44;
+            hardText.style.fill = Palette.Red;
+            hardText.style.fontSize = 64;
+            bcSize = 20;
+            alphSize = 6;
+        }
+
+        if (EnterKey.isDown && !EnterKey.isProcessed) {
+            EnterKey.isProcessed = true;
+            mainContainer.visible = false;
+        }
+    }
+
+    export function nowWorking() {
+        return mainContainer.visible;
+    }
+} // SelectMode
+
+namespace PlayMode {
+    const InfoTopMargin = 20;
+    const InfoWeight = 800;
+    const InfoHeight = 100;
+
+    // The game scene
+    let mainContainer: PIXI.Container;
+
+    /**
+     * PIXI objects of Trie
+     */
+    let timerText: PIXI.Text;
+    let resultText: PIXI.Text;
+    let helpText: PIXI.Text;
+    let infoContainer: PIXI.Container;
+
+    /**
+     * PIXI objects of Trie
+     */
+    let nodeGraphics: Array<PIXI.Graphics>;
+    let nodeTexts: Array<PIXI.Text>;
+    let edgeGraphics: Array<PIXI.Graphics>;
+    let edgeTexts: Array<PIXI.Text>;
+    let trieContainer: PIXI.Container;
+
+    /**
+     * PIXI objects of Base & Check
+     */
+    let bcHeaderTexts: Array<PIXI.Text>;
+    let bcIndexTexts: Array<PIXI.Text>;
+    let baseBodyGraphics: Array<PIXI.Graphics>;
+    let checkBodyGraphics: Array<PIXI.Graphics>;
+    let baseBodyTexts: Array<PIXI.Text>;
+    let checkBodyTexts: Array<PIXI.Text>;
+
+    let bcHeaderContainer: PIXI.Container;
+    let bcIndexContainer: PIXI.Container;
+    let baseBodyContainer: PIXI.Container;
+    let checkBodyContainer: PIXI.Container;
+    let bcContainer: PIXI.Container;
+
+    /**
+     * PIXI objects of target edges
+     */
+    let targetIndexTexts: Array<PIXI.Text>;
+    let targetBodyGraphics: Array<PIXI.Graphics>;
+    let targetBodyTexts: Array<PIXI.Text>;
+
+    let targetIndexContainer: PIXI.Container;
+    let targetBodyContainer: PIXI.Container;
+    let targetContainer: PIXI.Container;
+
+    let root: TRIE.Node; // Root node of random trie
+    let traverser: Array<{ node: TRIE.Node, bcPos: number }>; // Traverser
+
+    let baseValue: number;
+    let collisionChecked: boolean;
+
+    let howLong = timer();
+
+    enum GameState { Playing, Succeed, Failed, ToNext }
+    let gameState: GameState;
+
+    export function setup() {
+        /**
+         * Info Containors
+         */
+        infoContainer = new PIXI.Container();
+
+        timerText = new PIXI.Text('', textStyle);
+        timerText.position.set(0, InfoHeight / 2);
+        timerText.anchor.set(0.0, 0.5);
+        infoContainer.addChild(timerText);
+
+        helpText = new PIXI.Text('移動：左右キー\n配置：下キー\n戻る：ENTER', textStyle);
+        helpText.position.set(InfoWeight, InfoHeight / 2);
+        helpText.anchor.set(1.0, 0.5);
+        infoContainer.addChild(helpText);
+
+        resultText = new PIXI.Text('', { fontFamily: FontFamily, fontSize: 48, fill: 0x000000 });
+        resultText.position.set(InfoWeight / 2, InfoHeight / 2);
+        resultText.anchor.set(0.5, 0.5);
+        infoContainer.addChild(resultText);
+
+        infoContainer.pivot.set(infoContainer.width / 2, 0);
+        infoContainer.position.set(window.innerWidth / 2, InfoTopMargin);
+
+        /**
+         * TRIE Containors
+         */
+        const [posLists, edgeLists] = TRIE.makeSolutions(bcSize, alphSize);
+        root = TRIE.makeTrie(edgeLists);
+        drawTrie(root, bcSize);
+
+        trieContainer = new PIXI.Container();
+        for (let i = 1; i < bcSize; i++) {
+            trieContainer.addChild(edgeGraphics[i])
+            trieContainer.addChild(edgeTexts[i])
+        }
+        for (let i = 0; i < bcSize; i++) {
+            trieContainer.addChild(nodeGraphics[i])
+            trieContainer.addChild(nodeTexts[i])
+        }
+        trieContainer.pivot.set(trieContainer.width / 2, 0);
+        trieContainer.position.set(window.innerWidth / 2, InfoTopMargin + InfoHeight);
+
+        /**
+         * Base & Check Containors
+         */
+        bcHeaderContainer = new PIXI.Container();
+        bcHeaderTexts = drawArrayHeaderTexts(["BASE", "CHECK"], bcHeaderWidth, bcHeaderContainer);
+        bcHeaderContainer.position.set(0, elemHeight);
+
+        bcIndexContainer = new PIXI.Container();
+        bcIndexTexts = drawArrayIndexTexts(bcSize, false, bcIndexContainer);
+        bcIndexContainer.position.set(bcHeaderWidth, indexHeightOffset);
+
+        baseBodyContainer = new PIXI.Container();
+        baseBodyGraphics = drawArrayBodyGraphics(bcSize, baseBodyContainer);
+        baseBodyTexts = drawArrayBodyTexts(bcSize, baseBodyContainer);
+        baseBodyContainer.position.set(bcHeaderWidth, elemHeight);
+
+        checkBodyContainer = new PIXI.Container();
+        checkBodyGraphics = drawArrayBodyGraphics(bcSize, checkBodyContainer);
+        checkBodyTexts = drawArrayBodyTexts(bcSize, checkBodyContainer);
+        checkBodyContainer.position.set(bcHeaderWidth, 2 * elemHeight);
+
+        bcContainer = new PIXI.Container();
+        bcContainer.addChild(bcHeaderContainer);
+        bcContainer.addChild(bcIndexContainer);
+        bcContainer.addChild(baseBodyContainer);
+        bcContainer.addChild(checkBodyContainer);
+        bcContainer.pivot.set(bcContainer.width / 2, 0);
+        bcContainer.position.set(window.innerWidth / 2, trieContainer.position.y + trieContainer.height + bcMarginTop);
+
+
+        /**
+         * Target Containors
+         */
+        targetIndexContainer = new PIXI.Container();
+        targetIndexTexts = drawArrayIndexTexts(alphSize, true, targetIndexContainer);
+        targetIndexContainer.position.set(0, indexHeightOffset);
+
+        targetBodyContainer = new PIXI.Container();
+        targetBodyGraphics = drawArrayBodyGraphics(alphSize, targetBodyContainer);
+        targetBodyTexts = drawArrayBodyTexts(alphSize, targetBodyContainer);
+        targetBodyContainer.position.set(0, elemHeight);
+
+        targetContainer = new PIXI.Container();
+        targetContainer.addChild(targetIndexContainer);
+        targetContainer.addChild(targetBodyContainer);
+
+        edgeLeftOrigin = bcContainer.position.x - bcContainer.pivot.x + bcHeaderWidth;
+        targetContainer.position.set(edgeLeftOrigin, trieContainer.position.y + trieContainer.height + edgeMarginTop);
+
+        // Append
+        mainContainer = new PIXI.Container();
+        mainContainer.addChild(infoContainer);
+        mainContainer.addChild(bcContainer);
+        mainContainer.addChild(targetContainer);
+        mainContainer.addChild(trieContainer);
+        app.stage.addChild(mainContainer);
+
+        traverser = [{ node: root, bcPos: 0 }];
+
+        // Init
+        for (let c = 0; c < alphSize; c++) {
+            targetBodyTexts[c].text = '✓';
+            targetBodyTexts[c].visible = false;
+        }
+        for (let e of root.edges) {
+            targetBodyTexts[e.c].visible = true;
+        }
+
+        for (let i = 0; i < bcSize; i++) {
+            checkBodyTexts[i].visible = false;
+        }
+        checkBodyTexts[0].visible = true;
+        checkBodyTexts[0].text = '-1';
+
+        for (let i = 1; i < bcSize; i++) {
+            nodeTexts[i].visible = false;
+        }
+        howLong = timer();
+
+        baseValue = 0;
+        collisionChecked = false;
+
+        gameState = GameState.Playing;
+    }
+
+    export function doWork(delta: number) {
+        if (EnterKey.isDown && !EnterKey.isProcessed) {
+            mainContainer.visible = false;
+            EnterKey.isProcessed = true;
+            willRetry = true;
+            return;
+        }
+
+        if (gameState == GameState.Playing) { // Playing
+            timerText.text = `経過時間：${howLong.seconds}`;
+
+            const speed = 0.2 * delta;
+            if (LeftKey.isDown && baseValue >= speed) {
+                baseValue -= speed;
+            }
+            if (RightKey.isDown && baseValue + speed < bcSize - alphSize + 1) {
+                baseValue += speed;
+            }
+
+            const curr = traverser[0];
+            const baseInt = Math.floor(baseValue);
+
+            if (baseBodyTexts[curr.bcPos].text != `${baseInt}`) {
+                baseBodyTexts[curr.bcPos].text = `${baseInt}`;
+                baseBodyTexts[curr.bcPos].style.fill = Palette.Red;
+                targetContainer.x = baseInt * elemWidth + edgeLeftOrigin;
+                collisionChecked = false;
+
+                for (let e of curr.node.edges) {
+                    nodeTexts[e.child.nodeId].visible = true;
+                    nodeTexts[e.child.nodeId].text = `${baseInt + e.c}`;
+                    nodeTexts[e.child.nodeId].style.fill = Palette.Red;
+                }
+            }
+
+            if (DownKey.isDown && !DownKey.isProcessed && !collisionChecked) {
+                DownKey.isProcessed = true;
+                if (checkCollisions()) {
+                    insertNodes();
+                    if (!checkContinuability()) {
+                        gameState = GameState.Failed;
+                    }
+                } else {
+                    collisionChecked = true;
+                }
+            }
+        } else if (gameState == GameState.Succeed || gameState == GameState.Failed) { // 1: Finished
+            if (gameState == GameState.Succeed) {
+                resultText.text = '最適 :)';
+                resultText.style.fill = Palette.Blue;
+            } else {
+                resultText.text = '負け :(';
+                resultText.style.fill = Palette.Red;
+            }
+            gameState = GameState.ToNext;
+            return;
+        } else if (gameState == GameState.ToNext) { // 2: ToNextGame
+            return;
+        }
+    }
+
+    function drawTrie(root: TRIE.Node, numNodes: number) {
+        nodeGraphics = new Array<PIXI.Graphics>(numNodes);
+        nodeTexts = new Array<PIXI.Text>(numNodes);
+        edgeGraphics = new Array<PIXI.Graphics>(numNodes);
+        edgeTexts = new Array<PIXI.Text>(numNodes);
+
+        let queue = new Array<{ parent: TRIE.Node, node: TRIE.Node }>();
+        queue.push({ parent: root, node: root });
+
+        while (queue.length != 0) {
+            let curr = queue[0];
+            queue.shift();
+
+            const x = curr.node.offset * nodeMargin + (nodeMargin / 2);
+            const y = curr.node.level * nodeMargin + (nodeMargin / 2);
+
+            nodeGraphics[curr.node.nodeId] = new PIXI.Graphics()
+                .lineStyle(3, 0x000000)
+                .beginFill(0xffffff)
+                .drawCircle(x, y, nodeRadius)
+                .endFill();
+
+            nodeTexts[curr.node.nodeId] = new PIXI.Text(`${curr.node.nodeId}`, textStyle);
+            nodeTexts[curr.node.nodeId].position.set(x, y);
+            nodeTexts[curr.node.nodeId].anchor.set(0.5, 0.5);
+
+            if (curr.node.nodeId != 0) { // not root
+                const pt = nodeTexts[curr.parent.nodeId];
+                const nt = nodeTexts[curr.node.nodeId];
+                edgeGraphics[curr.node.nodeId] = new PIXI.Graphics()
+                    .lineStyle(3, 0x000000)
+                    .moveTo(pt.x, pt.y)
+                    .lineTo(nt.x, pt.y)
+                    .lineTo(nt.x, nt.y - nodeRadius)
+                    .lineTo(nt.x - nodeRadius / 3, nt.y - nodeRadius - nodeRadius / 2.5)
+                    .moveTo(nt.x + nodeRadius / 3, nt.y - nodeRadius - nodeRadius / 2.5)
+                    .lineTo(nt.x, nt.y - nodeRadius);
+                edgeTexts[curr.node.nodeId] = new PIXI.Text(`${CodeTable[curr.node.inEdge]}`, textStyle);
+                edgeTexts[curr.node.nodeId].position.set(x - (nodeMargin / 4.5), y - (nodeMargin / 1.8));
+                edgeTexts[curr.node.nodeId].anchor.set(0.5, 0.5);
+            }
+
+            for (let e of curr.node.edges) {
+                queue.push({ parent: curr.node, node: e.child });
+            }
+        }
     }
 
     function drawArrayHeaderTexts(names: Array<string>, width: number, container: PIXI.Container) {
-        let objs = Array<PIXI.Text>(names.length);
+        let objs = new Array<PIXI.Text>(names.length);
         for (let j = 0; j < names.length; j++) {
             const x = width / 2;
             const y = j * elemHeight + (elemHeight / 2);
@@ -93,10 +534,10 @@ namespace XChecker {
     }
 
     function drawArrayIndexTexts(size: number, isCode: boolean, container: PIXI.Container) {
-        let objs = Array<PIXI.Text>(size);
+        let objs = new Array<PIXI.Text>(size);
         for (let i = 0; i < size; i++) {
             const x = i * elemWidth;
-            const idx = isCode ? `${TRIE.codeTable[i]}` : `${i}`;
+            const idx = isCode ? `${CodeTable[i]}` : `${i}`;
             objs[i] = new PIXI.Text(idx, textStyle);
             objs[i].position.set(x + (elemWidth / 2), elemHeight / 2);
             objs[i].anchor.set(0.5, 0.5);
@@ -106,7 +547,7 @@ namespace XChecker {
     }
 
     function drawArrayBodyTexts(size: number, container: PIXI.Container) {
-        let objs = Array<PIXI.Text>(size);
+        let objs = new Array<PIXI.Text>(size);
         for (let i = 0; i < size; i++) {
             const x = i * elemWidth;
             objs[i] = new PIXI.Text('', textStyle);
@@ -118,7 +559,7 @@ namespace XChecker {
     }
 
     function drawArrayBodyGraphics(size: number, container: PIXI.Container) {
-        let objs = Array<PIXI.Graphics>(size);
+        let objs = new Array<PIXI.Graphics>(size);
         for (let i = 0; i < size; i++) {
             const x = i * elemWidth;
             objs[i] = new PIXI.Graphics()
@@ -131,177 +572,10 @@ namespace XChecker {
         return objs;
     }
 
-    // Graphics Objects
-    let bcIndexTexts: Array<PIXI.Text>;
-    let bcHeaderTexts: Array<PIXI.Text>;
-    let baseBodyGraphics: Array<PIXI.Graphics>;
-    let checkBodyGraphics: Array<PIXI.Graphics>;
-    let baseBodyTexts: Array<PIXI.Text>;
-    let checkBodyTexts: Array<PIXI.Text>;
-
-    let edgeIndexTexts: Array<PIXI.Text>;
-    let edgeBodyGraphics: Array<PIXI.Graphics>;
-    let edgeBodyTexts: Array<PIXI.Text>;
-
-    let triePixiObjs: any;
-
-    // Containers
-    let bcHeaderContainer = new PIXI.Container();
-    let bcBodyContainer = new PIXI.Container();
-    let bcContainer = new PIXI.Container();
-    let edgeContainer = new PIXI.Container();
-
-    const indexHeightOffset = elemHeight * 0.15;
-    const bcHeaderWidth = 2.2 * elemWidth;
-    const bcMarginTop = 600;
-    const bcMarginLeft = 20;
-
-    const edgeMarginTop = 500;
-    const edgeMarginLeft = bcMarginLeft + bcHeaderWidth;
-
-    let state: (x: number) => void;
-
-    function setup() {
-        /**
-         * BaseCheck Containors
-         */
-        // Header of BaseCheck
-        bcHeaderTexts = drawArrayHeaderTexts(["BASE", "CHECK"], bcHeaderWidth, bcHeaderContainer);
-        bcHeaderContainer.position.set(0, elemHeight);
-
-        // Index of BaseCheck
-        let bcIndexContainer = new PIXI.Container();
-        bcIndexTexts = drawArrayIndexTexts(bcSize, false, bcIndexContainer);
-        bcIndexContainer.position.set(0, indexHeightOffset);
-
-        // Body of Base
-        let baseBodyContainer = new PIXI.Container();
-        baseBodyGraphics = drawArrayBodyGraphics(bcSize, baseBodyContainer);
-        baseBodyTexts = drawArrayBodyTexts(bcSize, baseBodyContainer);
-        baseBodyContainer.position.set(0, elemHeight);
-
-        // Body of Check
-        let checkBodyContainer = new PIXI.Container();
-        checkBodyGraphics = drawArrayBodyGraphics(bcSize, checkBodyContainer);
-        checkBodyTexts = drawArrayBodyTexts(bcSize, checkBodyContainer);
-        checkBodyContainer.position.set(0, 2 * elemHeight);
-
-        bcBodyContainer.addChild(bcIndexContainer);
-        bcBodyContainer.addChild(baseBodyContainer);
-        bcBodyContainer.addChild(checkBodyContainer);
-        bcBodyContainer.position.set(bcHeaderWidth, 0);
-
-        bcContainer.addChild(bcHeaderContainer);
-        bcContainer.addChild(bcBodyContainer);
-        bcContainer.position.set(bcMarginLeft, bcMarginTop);
-
-        for (let i = 0; i < bcSize; i++) {
-            checkBodyTexts[i].visible = false;
-        }
-        checkBodyTexts[0].visible = true;
-        checkBodyTexts[0].text = '-1';
-
-        /**
-         * Edge Containors
-         */
-        let edgeIndexContainer = new PIXI.Container();
-        edgeIndexTexts = drawArrayIndexTexts(edgeSize, true, edgeIndexContainer);
-        edgeIndexContainer.position.set(0, indexHeightOffset);
-
-        let edgeBodyContainer = new PIXI.Container();
-        edgeBodyGraphics = drawArrayBodyGraphics(edgeSize, edgeBodyContainer);
-        edgeBodyTexts = drawArrayBodyTexts(edgeSize, edgeBodyContainer);
-        edgeBodyContainer.position.set(0, elemHeight);
-
-        edgeContainer.addChild(edgeIndexContainer);
-        edgeContainer.addChild(edgeBodyContainer);
-        edgeContainer.position.set(edgeMarginLeft, edgeMarginTop);
-
-        for (let c = 0; c < edgeSize; c++) {
-            edgeBodyTexts[c].text = '✓';
-            edgeBodyTexts[c].visible = false;
-        }
-        for (let e of rootNode.edges) {
-            edgeBodyTexts[e.c].visible = true;
-        }
-
-        nodeQueue = [{ node: rootNode, bcPos: 0 }];
-
-        let trieContainer = new PIXI.Container();
-        triePixiObjs = TRIE.drawTrie(rootNode, bcSize);
-
-        for (let i = 1; i < bcSize; i++) {
-            trieContainer.addChild(triePixiObjs.edgeGraphics[i])
-            trieContainer.addChild(triePixiObjs.edgeTexts[i])
-        }
-        for (let i = 0; i < bcSize; i++) {
-            trieContainer.addChild(triePixiObjs.nodeGraphics[i])
-            trieContainer.addChild(triePixiObjs.nodeTexts[i])
-        }
-        trieContainer.position.set(50, 20);
-
-        app.stage.addChild(bcContainer);
-        app.stage.addChild(edgeContainer);
-        app.stage.addChild(trieContainer);
-
-        for (let i = 1; i < bcSize; i++) {
-            triePixiObjs.nodeTexts[i].visible = false;
-        }
-
-        state = play;
-        app.ticker.add(delta => gameLoop(delta));
-    }
-
-    function gameLoop(delta: number) {
-        //Update the current game state:
-        state(delta);
-    }
-
-    function play(delta: number) {
-        if (finished) {
-            let finishC = new PIXI.Container();
-            let obj = new PIXI.Text("FINISHED!!!", textStyle);
-            obj.position.set(0, 0);
-            obj.anchor.set(0.5, 0.5);
-            finishC.addChild(obj);
-            finishC.position.set(300, 50);
-            app.stage.addChild(finishC);
-            return;
-        }
-
-        const speed = 0.2 * delta;
-        if (leftKey.isDown && baseValue >= speed) { baseValue -= speed; }
-        if (rightKey.isDown && baseValue + speed < bcSize - edgeSize + 1) { baseValue += speed; }
-
-        const curr = nodeQueue[0];
-        const baseInt = Math.floor(baseValue);
-
-        if (baseBodyTexts[curr.bcPos].text != `${baseInt}`) {
-            baseBodyTexts[curr.bcPos].text = `${baseInt}`;
-            baseBodyTexts[curr.bcPos].style.fill = '#FF0000';
-            edgeContainer.x = baseInt * elemWidth + edgeMarginLeft;
-            collisionChecked = false;
-
-            for (let e of curr.node.edges) {
-                triePixiObjs.nodeTexts[e.child.nodeId].visible = true;
-                triePixiObjs.nodeTexts[e.child.nodeId].text = `${baseInt + e.c}`;
-                triePixiObjs.nodeTexts[e.child.nodeId].style.fill = '#FF0000';
-            }
-        }
-
-        if (downKey.isDown && !collisionChecked) {
-            if (checkCollisions()) {
-                insertNodes();
-            } else {
-                collisionChecked = true;
-            }
-        }
-    }
-
     function checkCollisions() {
         const baseInt = Math.floor(baseValue);
-        for (let c = 0; c < edgeSize; c++) {
-            if (!edgeBodyTexts[c].visible) {
+        for (let c = 0; c < alphSize; c++) {
+            if (!targetBodyTexts[c].visible) {
                 continue;
             }
             if (checkBodyTexts[baseInt + c].visible) {
@@ -311,17 +585,36 @@ namespace XChecker {
         return true;
     }
 
+    function checkContinuability() {
+        for (let base = 0; base <= bcSize - alphSize; base++) {
+            let insertable = true;
+            for (let c = 0; c < alphSize; c++) {
+                if (!targetBodyTexts[c].visible) {
+                    continue;
+                }
+                if (checkBodyTexts[base + c].visible) {
+                    insertable = false;
+                    break;
+                }
+            }
+            if (insertable) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     function insertNodes() {
-        let curr = nodeQueue[0];
-        nodeQueue.shift();
+        let curr = traverser[0];
+        traverser.shift();
 
         const baseInt = Math.floor(baseValue);
         baseBodyTexts[curr.bcPos].visible = true;
         baseBodyTexts[curr.bcPos].text = `${baseInt}`;
         baseBodyTexts[curr.bcPos].style = textStyle;
 
-        for (let c = 0; c < edgeSize; c++) {
-            if (!edgeBodyTexts[c].visible) {
+        for (let c = 0; c < alphSize; c++) {
+            if (!targetBodyTexts[c].visible) {
                 continue;
             }
             checkBodyTexts[baseInt + c].text = `${curr.bcPos}`;
@@ -329,32 +622,70 @@ namespace XChecker {
         }
 
         for (let e of curr.node.edges) {
-            if (!edgeBodyTexts[e.c].visible) {
+            if (!targetBodyTexts[e.c].visible) {
                 console.assert("What's up!?");
             }
-            edgeBodyTexts[e.c].visible = false;
+            targetBodyTexts[e.c].visible = false;
             checkBodyTexts[baseInt + e.c].text = `${curr.bcPos}`;
             checkBodyTexts[baseInt + e.c].visible = true;
         }
 
         for (let e of curr.node.edges) {
-            triePixiObjs.nodeTexts[e.child.nodeId].style.fill = '#000000';
+            nodeTexts[e.child.nodeId].style.fill = '#000000';
         }
 
         for (let e of curr.node.edges) {
             if (!e.child.isLeaf()) {
-                nodeQueue.push({ node: e.child, bcPos: baseInt + e.c });
+                traverser.push({ node: e.child, bcPos: baseInt + e.c });
             }
         }
 
-        if (nodeQueue.length > 0) {
-            for (let e of nodeQueue[0].node.edges) {
-                edgeBodyTexts[e.c].visible = true;
+        if (traverser.length > 0) {
+            for (let e of traverser[0].node.edges) {
+                targetBodyTexts[e.c].visible = true;
             }
         } else {
-            finished = true;
+            gameState = 1; // finished
         }
     }
+} // PlayMode
 
-    setup();
+let state: (delta: number) => void;
+let willRetry = false;
+
+function setup() {
+    willRetry = false;
+
+    SelectMode.setup();
+    state = SelectMode.doWork;
+
+    app.ticker.add(delta => gameLoop(delta));
 }
+
+function gameLoop(delta: number) {
+    if (willRetry) {
+        app.stage.removeChildren();
+        willRetry = false;
+        SelectMode.setup();
+        state = SelectMode.doWork;
+    } else if (!SelectMode.nowWorking() && state != PlayMode.doWork) {
+        PlayMode.setup();
+        state = PlayMode.doWork;
+    }
+    state(delta);
+}
+
+WebFont.load({
+    google: { families: [FontFamily] },
+    loading: () => {
+        console.log('フォント読み込み中。');
+    },
+    active: () => {
+        console.log('フォント読み込み成功しました。');
+        setup();
+    },
+    inactive: () => {
+        console.log('フォント読み込み失敗しました。');
+        setup();
+    },
+});

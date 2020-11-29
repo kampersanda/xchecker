@@ -309,7 +309,7 @@ namespace PlayMode {
     let traverser: Array<{ node: TRIE.Node, bcPos: number }>; // Traverser
 
     let baseValue: number;
-    let collisionChecked: boolean;
+    let insertable: boolean;
 
     let howLong = timer();
 
@@ -425,9 +425,13 @@ namespace PlayMode {
         mainContainer.addChild(trieContainer);
         app.stage.addChild(mainContainer);
 
+        // Init
         traverser = [{ node: root, bcPos: 0 }];
 
-        // Init
+        for (let i = 1; i < bcSize; i++) {
+            nodeTexts[i].visible = false;
+        }
+
         for (let c = 0; c < alphSize; c++) {
             targetBodyTexts[c].text = '✓';
             targetBodyTexts[c].visible = false;
@@ -442,76 +446,11 @@ namespace PlayMode {
         checkBodyTexts[0].visible = true;
         checkBodyTexts[0].text = '-1';
 
-        for (let i = 1; i < bcSize; i++) {
-            nodeTexts[i].visible = false;
-        }
-        howLong = timer();
-
         baseValue = 0;
-        collisionChecked = false;
+        insertable = false;
 
+        howLong = timer();
         gameState = GameState.Playing;
-    }
-
-    export function doWork(delta: number) {
-        if (EnterKey.isDown && !EnterKey.isProcessed) {
-            mainContainer.visible = false;
-            EnterKey.isProcessed = true;
-            willRetry = true;
-            return;
-        }
-
-        if (gameState == GameState.Playing) { // Playing
-            timerText.text = `経過時間：${howLong.seconds}`;
-
-            const speed = 0.2 * delta;
-            if (LeftKey.isDown && baseValue >= speed) {
-                baseValue -= speed;
-            }
-            if (RightKey.isDown && baseValue + speed < bcSize - alphSize + 1) {
-                baseValue += speed;
-            }
-
-            const curr = traverser[0];
-            const baseInt = Math.floor(baseValue);
-
-            if (baseBodyTexts[curr.bcPos].text != `${baseInt}`) {
-                baseBodyTexts[curr.bcPos].text = `${baseInt}`;
-                baseBodyTexts[curr.bcPos].style.fill = Palette.Red;
-                targetContainer.x = baseInt * ElemWidth + targrtXorigin;
-                collisionChecked = false;
-
-                for (let e of curr.node.edges) {
-                    nodeTexts[e.child.nodeId].visible = true;
-                    nodeTexts[e.child.nodeId].text = `${baseInt + e.c}`;
-                    nodeTexts[e.child.nodeId].style.fill = Palette.Red;
-                }
-            }
-
-            if (DownKey.isDown && !DownKey.isProcessed && !collisionChecked) {
-                DownKey.isProcessed = true;
-                if (checkCollisions()) {
-                    insertNodes();
-                    if (!checkContinuability()) {
-                        gameState = GameState.Failed;
-                    }
-                } else {
-                    collisionChecked = true;
-                }
-            }
-        } else if (gameState == GameState.Succeed || gameState == GameState.Failed) { // 1: Finished
-            if (gameState == GameState.Succeed) {
-                resultText.text = '最適 :D';
-                resultText.style.fill = Palette.Blue;
-            } else {
-                resultText.text = '負け :(';
-                resultText.style.fill = Palette.Red;
-            }
-            gameState = GameState.ToNext;
-            return;
-        } else if (gameState == GameState.ToNext) { // 2: ToNextGame
-            return;
-        }
     }
 
     function drawTrie(root: TRIE.Node, numNodes: number) {
@@ -614,17 +553,74 @@ namespace PlayMode {
         return objs;
     }
 
-    function checkCollisions() {
-        const baseInt = Math.floor(baseValue);
-        for (let c = 0; c < alphSize; c++) {
-            if (!targetBodyTexts[c].visible) {
-                continue;
-            }
-            if (checkBodyTexts[baseInt + c].visible) {
-                return false;
-            }
+    export function doWork(delta: number) {
+        if (EnterKey.isDown && !EnterKey.isProcessed) {
+            mainContainer.visible = false;
+            EnterKey.isProcessed = true;
+            willRetry = true;
+            return;
         }
-        return true;
+
+        if (gameState == GameState.Playing) { // Playing
+            timerText.text = `経過時間：${howLong.seconds}`;
+
+            const speed = 0.2 * delta;
+            if (LeftKey.isDown && baseValue >= speed) {
+                baseValue -= speed;
+            }
+            if (RightKey.isDown && baseValue + speed < bcSize - alphSize + 1) {
+                baseValue += speed;
+            }
+
+            const curr = traverser[0];
+            const baseInt = Math.floor(baseValue);
+
+            // Base value is updated
+            if (baseBodyTexts[curr.bcPos].text != `${baseInt}`) {
+                // Collision Check
+                insertable = true;
+                for (let e of curr.node.edges) {
+                    const dstPos = baseInt + e.c;
+                    nodeTexts[e.child.nodeId].visible = true;
+                    nodeTexts[e.child.nodeId].text = `${dstPos}`;
+                    if (checkBodyTexts[dstPos].visible) { // already defined
+                        nodeTexts[e.child.nodeId].style.fill = Palette.Red;
+                        insertable = false;
+                    } else {
+                        nodeTexts[e.child.nodeId].style.fill = Palette.Blue;
+                    }
+                }
+
+                baseBodyTexts[curr.bcPos].text = `${baseInt}`;
+                baseBodyTexts[curr.bcPos].style.fill = insertable ? Palette.Blue : Palette.Red;
+
+                // Move targetContainer
+                targetContainer.x = baseInt * ElemWidth + targrtXorigin;
+            }
+
+            if (DownKey.isDown && !DownKey.isProcessed && insertable) {
+                DownKey.isProcessed = true;
+                if (insertable) {
+                    insertNodes();
+                    if (!checkContinuability()) {
+                        gameState = GameState.Failed;
+                    }
+                    insertable = false;
+                }
+            }
+        } else if (gameState == GameState.Succeed || gameState == GameState.Failed) { // 1: Finished
+            if (gameState == GameState.Succeed) {
+                resultText.text = '最適 :D';
+                resultText.style.fill = Palette.Blue;
+            } else {
+                resultText.text = '負け :(';
+                resultText.style.fill = Palette.Red;
+            }
+            gameState = GameState.ToNext;
+            return;
+        } else if (gameState == GameState.ToNext) { // 2: ToNextGame
+            return;
+        }
     }
 
     function checkContinuability() {

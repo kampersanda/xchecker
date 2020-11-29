@@ -1,2 +1,3 @@
 # xchecker
-App of constructing double-array trie
+
+構築中

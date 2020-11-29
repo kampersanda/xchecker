@@ -616,10 +616,15 @@ namespace PlayMode {
             if (gameState == GameState.Succeed) {
                 timerText.style.fill = Palette.Blue;
 
-                const resText = new PIXI.Text(`Rank ${getRank(elapsed)}`, { fontFamily: FontFamily, fontSize: 64, fill: Palette.Blue });
-                resText.position.set(InfoWidth / 2, InfoHeight / 2);
-                resText.anchor.set(0.5, 0.5);
+                const resText = new PIXI.Text(`${getRank(elapsed)}`, { fontFamily: FontFamily, fontSize: 64, fill: Palette.Blue });
+                resText.position.set(InfoWidth / 2 - 80, InfoHeight / 2);
+                resText.anchor.set(0.0, 0.5);
                 infoContainer.addChild(resText);
+
+                const auxText = new PIXI.Text('まるで', { fontFamily: FontFamily, fontSize: 32, fill: Palette.Blue });
+                auxText.position.set(resText.position.x, resText.position.y - 10);
+                auxText.anchor.set(1.0, 0.5);
+                infoContainer.addChild(auxText);
             } else {
                 const resText = new PIXI.Text('負け', { fontFamily: FontFamily, fontSize: 64, fill: Palette.Red });
                 resText.position.set(InfoWidth / 2 + 30, InfoHeight / 2);
@@ -703,15 +708,15 @@ namespace PlayMode {
 
     function getRank(elapsed: number) {
         if (elapsed <= 3.0) {
-            return 'S';
+            return '定数時間';
         } else if (elapsed <= 5.0) {
-            return 'A';
+            return '対数時間';
         } else if (elapsed <= 10.0) {
-            return 'B';
+            return '線形時間';
         } else if (elapsed <= 20.0) {
-            return 'C';
+            return '二乗時間';
         } else if (elapsed <= 30.0) {
-            return 'D';
+            return '階乗時間';
         }
         return 'E';
     }

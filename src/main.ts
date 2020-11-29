@@ -2,10 +2,9 @@ import * as PIXI from "pixi.js"
 import * as WebFont from "webfontloader"
 import TRIE = require("./trie");
 
-// let app: PIXI.Application;
-const app = new PIXI.Application({ width: window.innerWidth, height: window.innerHeight, transparent: true, antialias: true });
-app.renderer.plugins.interaction.autoPreventDefault = false;
-app.renderer.view.style.touchAction = 'auto';
+const ScreenWidth = window.innerWidth;
+const ScreenHeight = window.innerHeight;
+const app = new PIXI.Application({ width: ScreenWidth, height: ScreenHeight, transparent: true, antialias: true });
 
 const element: any = document.getElementById('app');
 element.appendChild(app.view);
@@ -13,9 +12,6 @@ element.appendChild(app.view);
 // Variables
 let bcSize = 16;
 let alphSize = 4;
-
-const elemWidth = 50;
-const elemHeight = 50;
 
 const FontFamily = 'MPLUSRounded1c-Regular';
 const TitleFamily = "\"Comic Sans MS\", cursive, sans-serif";
@@ -32,15 +28,6 @@ enum Difficulty {
     Easy,
     Hard,
 }
-
-let edgeLeftOrigin = 0;
-
-const indexHeightOffset = elemHeight * 0.15;
-const bcHeaderWidth = 2.2 * elemWidth;
-
-const edgeMarginTop = elemHeight * 0.8;
-const bcMarginTop = edgeMarginTop + elemHeight * 2;
-
 
 const CodeTable = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 
@@ -157,8 +144,8 @@ namespace SelectMode {
 
     export function setup() {
         console.log('SelectMode.setup');
-
         mainContainer = new PIXI.Container();
+
         mainGraphics = new PIXI.Graphics()
             .lineStyle(10, 0x000000)
             .beginFill(0xffffff)
@@ -197,7 +184,7 @@ namespace SelectMode {
         mainContainer.addChild(licenseText);
 
         mainContainer.pivot.set(mainContainer.width / 2, 0);
-        mainContainer.position.set(window.innerWidth / 2, 100);
+        mainContainer.position.set(ScreenWidth / 2, 100);
 
         app.stage.addChild(mainContainer);
     }
@@ -246,12 +233,30 @@ namespace SelectMode {
 } // SelectMode
 
 namespace PlayMode {
-    const InfoTopMargin = 20;
-    const InfoWeight = 800;
-    const InfoHeight = 100;
+    const InfoWidth = 1000;
+    const InfoHeight = 150;
+
+    const TrieWidth = 1200;
+    const TrieHeight = 400;
+
+    const TargetTopMargin = 20;
+
+    const TargetWidth = 1200;
+    const TargetHeight = 100;
+
+    const BcWidth = 1200;
+    const BcHeight = 150;
 
     const NodeRadius = 25;
     const NodeMargin = 100;
+
+    const ElemWidth = 50;
+    const ElemHeight = 50;
+
+    const IndexHeightOffset = ElemHeight * 0.15;
+    const BcHeaderWidth = 2.2 * ElemWidth;
+
+    let targrtXorigin = 0;
 
     // The game scene
     let mainContainer: PIXI.Container;
@@ -323,17 +328,17 @@ namespace PlayMode {
         infoContainer.addChild(timerText);
 
         helpText = new PIXI.Text('移動：左右キー\n配置：下キー\n戻る：ENTER', TextStyle);
-        helpText.position.set(InfoWeight, InfoHeight / 2);
+        helpText.position.set(InfoWidth, InfoHeight / 2);
         helpText.anchor.set(1.0, 0.5);
         infoContainer.addChild(helpText);
 
         resultText = new PIXI.Text('', { fontFamily: FontFamily, fontSize: 64, fill: 0x000000 });
-        resultText.position.set(InfoWeight / 2, InfoHeight / 2);
+        resultText.position.set(InfoWidth / 2, InfoHeight / 2);
         resultText.anchor.set(0.5, 0.5);
         infoContainer.addChild(resultText);
 
-        infoContainer.pivot.set(infoContainer.width / 2, 0);
-        infoContainer.position.set(window.innerWidth / 2, InfoTopMargin);
+        infoContainer.pivot.set(InfoWidth / 2, 0);
+        infoContainer.position.set(ScreenWidth / 2, 0);
 
         /**
          * TRIE Containors
@@ -351,57 +356,66 @@ namespace PlayMode {
             trieContainer.addChild(nodeGraphics[i])
             trieContainer.addChild(nodeTexts[i])
         }
+
         trieContainer.pivot.set(trieContainer.width / 2, 0);
-        trieContainer.position.set(window.innerWidth / 2, InfoTopMargin + InfoHeight);
+        trieContainer.position.set(ScreenWidth / 2, InfoHeight);
+
+        if (trieContainer.height > TrieHeight) {
+            const scale = TrieHeight / trieContainer.height;
+            trieContainer.scale.set(scale, scale);
+        } else if (trieContainer.width > TrieWidth) {
+            const scale = TrieWidth / trieContainer.width;
+            trieContainer.scale.set(scale, scale);
+        }
 
         /**
          * Base & Check Containors
          */
         bcHeaderContainer = new PIXI.Container();
-        bcHeaderTexts = drawArrayHeaderTexts(["BASE", "CHECK"], bcHeaderWidth, bcHeaderContainer);
-        bcHeaderContainer.position.set(0, elemHeight);
+        bcHeaderTexts = drawArrayHeaderTexts(["BASE", "CHECK"], BcHeaderWidth, bcHeaderContainer);
+        bcHeaderContainer.position.set(0, ElemHeight);
 
         bcIndexContainer = new PIXI.Container();
         bcIndexTexts = drawArrayIndexTexts(bcSize, false, bcIndexContainer);
-        bcIndexContainer.position.set(bcHeaderWidth, indexHeightOffset);
+        bcIndexContainer.position.set(BcHeaderWidth, IndexHeightOffset);
 
         baseBodyContainer = new PIXI.Container();
         baseBodyGraphics = drawArrayBodyGraphics(bcSize, baseBodyContainer);
         baseBodyTexts = drawArrayBodyTexts(bcSize, baseBodyContainer);
-        baseBodyContainer.position.set(bcHeaderWidth, elemHeight);
+        baseBodyContainer.position.set(BcHeaderWidth, ElemHeight);
 
         checkBodyContainer = new PIXI.Container();
         checkBodyGraphics = drawArrayBodyGraphics(bcSize, checkBodyContainer);
         checkBodyTexts = drawArrayBodyTexts(bcSize, checkBodyContainer);
-        checkBodyContainer.position.set(bcHeaderWidth, 2 * elemHeight);
+        checkBodyContainer.position.set(BcHeaderWidth, 2 * ElemHeight);
 
         bcContainer = new PIXI.Container();
         bcContainer.addChild(bcHeaderContainer);
         bcContainer.addChild(bcIndexContainer);
         bcContainer.addChild(baseBodyContainer);
         bcContainer.addChild(checkBodyContainer);
-        bcContainer.pivot.set(bcContainer.width / 2, 0);
-        bcContainer.position.set(window.innerWidth / 2, trieContainer.position.y + trieContainer.height + bcMarginTop);
 
+        bcContainer.pivot.set(bcContainer.width / 2, 0);
+        bcContainer.position.set(ScreenWidth / 2, InfoHeight + TrieHeight + TargetTopMargin + TargetHeight);
 
         /**
          * Target Containors
          */
         targetIndexContainer = new PIXI.Container();
         targetIndexTexts = drawArrayIndexTexts(alphSize, true, targetIndexContainer);
-        targetIndexContainer.position.set(0, indexHeightOffset);
+        targetIndexContainer.position.set(0, IndexHeightOffset);
 
         targetBodyContainer = new PIXI.Container();
         targetBodyGraphics = drawArrayBodyGraphics(alphSize, targetBodyContainer);
         targetBodyTexts = drawArrayBodyTexts(alphSize, targetBodyContainer);
-        targetBodyContainer.position.set(0, elemHeight);
+        targetBodyContainer.position.set(0, ElemHeight);
 
         targetContainer = new PIXI.Container();
         targetContainer.addChild(targetIndexContainer);
         targetContainer.addChild(targetBodyContainer);
 
-        edgeLeftOrigin = bcContainer.position.x - bcContainer.pivot.x + bcHeaderWidth;
-        targetContainer.position.set(edgeLeftOrigin, trieContainer.position.y + trieContainer.height + edgeMarginTop);
+        targrtXorigin = bcContainer.position.x - bcContainer.pivot.x + BcHeaderWidth;
+        targetContainer.position.set(targrtXorigin, InfoHeight + TrieHeight + TargetTopMargin);
 
         // Append
         mainContainer = new PIXI.Container();
@@ -464,7 +478,7 @@ namespace PlayMode {
             if (baseBodyTexts[curr.bcPos].text != `${baseInt}`) {
                 baseBodyTexts[curr.bcPos].text = `${baseInt}`;
                 baseBodyTexts[curr.bcPos].style.fill = Palette.Red;
-                targetContainer.x = baseInt * elemWidth + edgeLeftOrigin;
+                targetContainer.x = baseInt * ElemWidth + targrtXorigin;
                 collisionChecked = false;
 
                 for (let e of curr.node.edges) {
@@ -487,7 +501,7 @@ namespace PlayMode {
             }
         } else if (gameState == GameState.Succeed || gameState == GameState.Failed) { // 1: Finished
             if (gameState == GameState.Succeed) {
-                resultText.text = '最適 :)';
+                resultText.text = '最適 :D';
                 resultText.style.fill = Palette.Blue;
             } else {
                 resultText.text = '負け :(';
@@ -552,7 +566,7 @@ namespace PlayMode {
         let objs = new Array<PIXI.Text>(names.length);
         for (let j = 0; j < names.length; j++) {
             const x = width / 2;
-            const y = j * elemHeight + (elemHeight / 2);
+            const y = j * ElemHeight + (ElemHeight / 2);
             objs[j] = new PIXI.Text(names[j], TextStyle);
             objs[j].position.set(x, y);
             objs[j].anchor.set(0.5, 0.5);
@@ -564,10 +578,10 @@ namespace PlayMode {
     function drawArrayIndexTexts(size: number, isCode: boolean, container: PIXI.Container) {
         let objs = new Array<PIXI.Text>(size);
         for (let i = 0; i < size; i++) {
-            const x = i * elemWidth;
+            const x = i * ElemWidth;
             const idx = isCode ? `${CodeTable[i]}` : `${i}`;
             objs[i] = new PIXI.Text(idx, TextStyle);
-            objs[i].position.set(x + (elemWidth / 2), elemHeight / 2);
+            objs[i].position.set(x + (ElemWidth / 2), ElemHeight / 2);
             objs[i].anchor.set(0.5, 0.5);
             container.addChild(objs[i]);
         }
@@ -577,9 +591,9 @@ namespace PlayMode {
     function drawArrayBodyTexts(size: number, container: PIXI.Container) {
         let objs = new Array<PIXI.Text>(size);
         for (let i = 0; i < size; i++) {
-            const x = i * elemWidth;
+            const x = i * ElemWidth;
             objs[i] = new PIXI.Text('', TextStyle);
-            objs[i].position.set(x + (elemWidth / 2), elemHeight / 2);
+            objs[i].position.set(x + (ElemWidth / 2), ElemHeight / 2);
             objs[i].anchor.set(0.5, 0.5);
             container.addChild(objs[i]);
         }
@@ -589,11 +603,11 @@ namespace PlayMode {
     function drawArrayBodyGraphics(size: number, container: PIXI.Container) {
         let objs = new Array<PIXI.Graphics>(size);
         for (let i = 0; i < size; i++) {
-            const x = i * elemWidth;
+            const x = i * ElemWidth;
             objs[i] = new PIXI.Graphics()
                 .lineStyle(3, 0x000000)
                 .beginFill(0xffffff)
-                .drawRect(x, 0, elemWidth, elemHeight)
+                .drawRect(x, 0, ElemWidth, ElemHeight)
                 .endFill();
             container.addChild(objs[i]);
         }

@@ -89,9 +89,12 @@ function keyboard(value: string, press: (arg: void) => void, release: (arg: void
 function timer() {
     let timeStart = new Date().getTime();
     return {
+        // get seconds() {
+        //     const sec = (new Date().getTime() - timeStart) / 1000;
+        //     return sec.toFixed(1) + 's';
+        // },
         get seconds() {
-            const sec = (new Date().getTime() - timeStart) / 1000;
-            return sec.toFixed(1) + 's';
+            return (new Date().getTime() - timeStart) / 1000;
         },
     }
 }
@@ -265,7 +268,6 @@ namespace PlayMode {
      * PIXI objects of Trie
      */
     let timerText: PIXI.Text;
-    let resultText: PIXI.Text;
     let helpText: PIXI.Text;
     let infoContainer: PIXI.Container;
 
@@ -331,11 +333,6 @@ namespace PlayMode {
         helpText.position.set(InfoWidth, InfoHeight / 2);
         helpText.anchor.set(1.0, 0.5);
         infoContainer.addChild(helpText);
-
-        resultText = new PIXI.Text('', { fontFamily: FontFamily, fontSize: 64, fill: 0x000000 });
-        resultText.position.set(InfoWidth / 2, InfoHeight / 2);
-        resultText.anchor.set(0.5, 0.5);
-        infoContainer.addChild(resultText);
 
         infoContainer.pivot.set(InfoWidth / 2, 0);
         infoContainer.position.set(ScreenWidth / 2, 0);
@@ -562,7 +559,8 @@ namespace PlayMode {
         }
 
         if (gameState == GameState.Playing) { // Playing
-            timerText.text = `経過時間：${howLong.seconds}`;
+            const elapsed = howLong.seconds;
+            timerText.text = `経過時間：${elapsed.toFixed(1)}s`;
 
             const speed = 0.2 * delta;
             if (LeftKey.isDown && baseValue >= speed) {
@@ -609,15 +607,28 @@ namespace PlayMode {
                 }
             }
         } else if (gameState == GameState.Succeed || gameState == GameState.Failed) { // 1: Finished
+            const elapsed = howLong.seconds;
+            timerText.text = `経過時間：${elapsed.toFixed(1)}s`;
+
             if (gameState == GameState.Succeed) {
-                resultText.text = '最適 :D';
-                resultText.style.fill = Palette.Blue;
+                timerText.style.fill = Palette.Blue;
+
+                const resText = new PIXI.Text(`Rank ${getRank(elapsed)}`, { fontFamily: FontFamily, fontSize: 64, fill: Palette.Blue });
+                resText.position.set(InfoWidth / 2, InfoHeight / 2);
+                resText.anchor.set(0.5, 0.5);
+                infoContainer.addChild(resText);
             } else {
-                resultText.text = '負け :(';
-                resultText.style.fill = Palette.Red;
+                const resText = new PIXI.Text('負け', { fontFamily: FontFamily, fontSize: 64, fill: Palette.Red });
+                resText.position.set(InfoWidth / 2 + 30, InfoHeight / 2);
+                resText.anchor.set(0.0, 0.5);
+                infoContainer.addChild(resText);
+
+                const auxText = new PIXI.Text('データ構造的に', { fontFamily: FontFamily, fontSize: 32, fill: Palette.Red });
+                auxText.position.set(resText.position.x, resText.position.y - 10);
+                auxText.anchor.set(1.0, 0.5);
+                infoContainer.addChild(auxText);
             }
             gameState = GameState.ToNext;
-            return;
         } else if (gameState == GameState.ToNext) { // 2: ToNextGame
             return;
         }
@@ -685,6 +696,21 @@ namespace PlayMode {
         } else {
             gameState = 1; // finished
         }
+    }
+
+    function getRank(elapsed: number) {
+        if (elapsed <= 3.0) {
+            return 'S';
+        } else if (elapsed <= 5.0) {
+            return 'A';
+        } else if (elapsed <= 10.0) {
+            return 'B';
+        } else if (elapsed <= 20.0) {
+            return 'C';
+        } else if (elapsed <= 30.0) {
+            return 'D';
+        }
+        return 'E';
     }
 } // PlayMode
 

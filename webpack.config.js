@@ -3,7 +3,7 @@ const main = {
     entry: './src/main.ts',
     output: {
         path: __dirname,
-        filename: './dist/main.js'
+        filename: './app/main.js'
     },
     module: {
         rules: [

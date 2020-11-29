@@ -606,6 +606,9 @@ namespace PlayMode {
                     insertable = false;
                 }
             }
+            if (LeftKey.isUp && RightKey.isUp) {
+                baseValue = Math.floor(baseValue) + 0.5;
+            }
         } else if (gameState == GameState.Succeed || gameState == GameState.Failed) { // 1: Finished
             const elapsed = howLong.seconds;
             timerText.text = `経過時間：${elapsed.toFixed(1)}s`;

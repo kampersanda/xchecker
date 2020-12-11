@@ -2,10 +2,7 @@ import * as PIXI from "pixi.js"
 import * as WebFont from "webfontloader"
 import TRIE = require("./trie");
 
-const ScreenWidth = window.innerWidth;
-const ScreenHeight = window.innerHeight;
-const app = new PIXI.Application({ width: ScreenWidth, height: ScreenHeight, transparent: true, antialias: true });
-
+const app = new PIXI.Application({ width: 1400, height: 800, transparent: true, antialias: true });
 const element: any = document.getElementById('app');
 element.appendChild(app.view);
 
@@ -89,14 +86,37 @@ function keyboard(value: string, press: (arg: void) => void, release: (arg: void
 function timer() {
     let timeStart = new Date().getTime();
     return {
-        // get seconds() {
-        //     const sec = (new Date().getTime() - timeStart) / 1000;
-        //     return sec.toFixed(1) + 's';
-        // },
         get seconds() {
             return (new Date().getTime() - timeStart) / 1000;
         },
     }
+}
+
+function resizeCanvas() {
+    const renderer = app.renderer;
+
+    let canvasWidth;
+    let canvasHeight;
+
+    const rendererWidthRatio = renderer.width / renderer.height;
+    const windowWidthRatio = window.innerWidth / window.innerHeight;
+
+    if (windowWidthRatio > rendererWidthRatio) {
+        canvasWidth = window.innerHeight * (renderer.width / renderer.height);
+        canvasHeight = window.innerHeight;
+    } else {
+        canvasWidth = window.innerWidth;
+        canvasHeight = window.innerWidth * (renderer.height / renderer.width);
+    }
+
+    console.log(renderer.width);
+    console.log(renderer.height);
+
+    console.log(canvasWidth);
+    console.log(canvasHeight);
+
+    renderer.view.style.width = `${canvasWidth}px`;
+    renderer.view.style.height = `${canvasHeight}px`;
 }
 
 let state: (delta: number) => void;
@@ -108,6 +128,7 @@ function setup() {
     SelectMode.setup();
     state = SelectMode.doWork;
 
+    resizeCanvas();
     app.ticker.add(delta => gameLoop(delta));
 }
 
@@ -187,7 +208,8 @@ namespace SelectMode {
         mainContainer.addChild(licenseText);
 
         mainContainer.pivot.set(mainContainer.width / 2, 0);
-        mainContainer.position.set(ScreenWidth / 2, 100);
+        // mainContainer.position.set(window.innerWidth / 2, 100);
+        mainContainer.position.set(app.renderer.width / 2, 100);
 
         app.stage.addChild(mainContainer);
     }
@@ -240,9 +262,9 @@ namespace PlayMode {
     const InfoHeight = 150;
 
     const TrieWidth = 1200;
-    const TrieHeight = 400;
+    const TrieHeight = 380;
 
-    const TargetTopMargin = 20;
+    const TargetTopMargin = 15;
 
     const TargetWidth = 1200;
     const TargetHeight = 100;
@@ -335,7 +357,7 @@ namespace PlayMode {
         infoContainer.addChild(helpText);
 
         infoContainer.pivot.set(InfoWidth / 2, 0);
-        infoContainer.position.set(ScreenWidth / 2, 0);
+        infoContainer.position.set(app.renderer.width / 2, 0);
 
         /**
          * TRIE Containors
@@ -355,7 +377,7 @@ namespace PlayMode {
         }
 
         trieContainer.pivot.set(trieContainer.width / 2, 0);
-        trieContainer.position.set(ScreenWidth / 2, InfoHeight);
+        trieContainer.position.set(app.renderer.width / 2, InfoHeight);
 
         if (trieContainer.height > TrieHeight) {
             const scale = TrieHeight / trieContainer.height;
@@ -393,7 +415,7 @@ namespace PlayMode {
         bcContainer.addChild(checkBodyContainer);
 
         bcContainer.pivot.set(bcContainer.width / 2, 0);
-        bcContainer.position.set(ScreenWidth / 2, InfoHeight + TrieHeight + TargetTopMargin + TargetHeight);
+        bcContainer.position.set(app.renderer.width / 2, InfoHeight + TrieHeight + TargetTopMargin + TargetHeight);
 
         /**
          * Target Containors
@@ -739,3 +761,5 @@ WebFont.load({
         setup();
     },
 });
+
+window.addEventListener('resize', resizeCanvas);

@@ -581,7 +581,7 @@ namespace PlayMode {
             const elapsed = howLong.seconds;
             timerText.text = `経過時間：${elapsed.toFixed(1)}s`;
 
-            const speed = 0.2 * delta;
+            const speed = 0.18 * delta;
             if (LeftKey.isDown && baseValue >= speed) {
                 baseValue -= speed;
             }

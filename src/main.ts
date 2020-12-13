@@ -2,7 +2,9 @@ import * as PIXI from "pixi.js"
 import * as WebFont from "webfontloader"
 import TRIE = require("./trie");
 
-const app = new PIXI.Application({ width: 1400, height: 800, transparent: true, antialias: true });
+const defaultWidth = 1400;
+const defaultHeight = 850;
+const app = new PIXI.Application({ width: defaultWidth, height: defaultHeight, transparent: true, antialias: true, });
 const element: any = document.getElementById('app');
 element.appendChild(app.view);
 
@@ -93,28 +95,24 @@ function timer() {
 }
 
 function resizeCanvas() {
-    const renderer = app.renderer;
+    let canvasWidth = defaultWidth;
+    let canvasHeight = defaultHeight;
 
-    let canvasWidth;
-    let canvasHeight;
-
-    const rendererWidthRatio = renderer.width / renderer.height;
-    const windowWidthRatio = window.innerWidth / window.innerHeight;
-
-    if (windowWidthRatio > rendererWidthRatio) {
-        canvasWidth = window.innerHeight * (renderer.width / renderer.height);
-        canvasHeight = window.innerHeight;
-    } else {
-        canvasWidth = window.innerWidth;
-        canvasHeight = window.innerWidth * (renderer.height / renderer.width);
+    if (canvasWidth > window.innerWidth) {
+        const ratio = window.innerWidth / canvasWidth;
+        canvasWidth = canvasWidth * ratio;
+        canvasHeight = canvasHeight * ratio;
+    }
+    if (canvasHeight > window.innerHeight) {
+        const ratio = window.innerHeight / canvasHeight;
+        canvasWidth = canvasWidth * ratio;
+        canvasHeight = canvasHeight * ratio;
     }
 
-    console.log(renderer.width);
-    console.log(renderer.height);
+    console.log(`canvasWidth=${canvasWidth}, canvasHeight=${canvasHeight}`);
+    console.log(`window.innerWidth=${window.innerWidth}, window.innerHeight=${window.innerHeight}`);
 
-    console.log(canvasWidth);
-    console.log(canvasHeight);
-
+    const renderer = app.renderer;
     renderer.view.style.width = `${canvasWidth}px`;
     renderer.view.style.height = `${canvasHeight}px`;
 }
@@ -208,7 +206,6 @@ namespace SelectMode {
         mainContainer.addChild(licenseText);
 
         mainContainer.pivot.set(mainContainer.width / 2, 0);
-        // mainContainer.position.set(window.innerWidth / 2, 100);
         mainContainer.position.set(app.renderer.width / 2, 100);
 
         app.stage.addChild(mainContainer);

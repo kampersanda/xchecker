@@ -117,6 +117,8 @@ function resizeCanvas() {
     renderer.view.style.height = `${canvasHeight}px`;
 }
 
+// let windowResize = resizeCanvas;
+
 let state: (delta: number) => void;
 let willRetry = false;
 

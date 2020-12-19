@@ -584,12 +584,30 @@ namespace PlayMode {
             timerText.text = `経過時間：${elapsed.toFixed(1)}s`;
 
             const speed = 0.18 * delta;
+
             if (LeftKey.isDown && baseValue >= speed) {
-                baseValue -= speed;
+                if (LeftKey.isProcessed) {
+                    baseValue -= speed;
+                } else {
+                    LeftKey.isProcessed = true;
+                    baseValue = Math.ceil(baseValue) - 1.0;
+                }
             }
             if (RightKey.isDown && baseValue + speed < bcSize - alphSize + 1) {
-                baseValue += speed;
+                if (RightKey.isProcessed) {
+                    baseValue += speed;
+                } else {
+                    RightKey.isProcessed = true;
+                    baseValue = Math.floor(baseValue) + 1.0;
+                }
             }
+
+            // if (LeftKey.isDown && baseValue >= speed) {
+            //     baseValue -= speed;
+            // }
+            // if (RightKey.isDown && baseValue + speed < bcSize - alphSize + 1) {
+            //     baseValue += speed;
+            // }
 
             const curr = traverser[0];
             const baseInt = Math.floor(baseValue);

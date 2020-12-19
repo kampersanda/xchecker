@@ -590,7 +590,7 @@ namespace PlayMode {
                     baseValue -= speed;
                 } else {
                     LeftKey.isProcessed = true;
-                    baseValue = Math.ceil(baseValue) - 1.0;
+                    baseValue = Math.max(0.0, Math.ceil(baseValue) - 1.0);
                 }
             }
             if (RightKey.isDown && baseValue + speed < bcSize - alphSize + 1) {
@@ -598,7 +598,7 @@ namespace PlayMode {
                     baseValue += speed;
                 } else {
                     RightKey.isProcessed = true;
-                    baseValue = Math.floor(baseValue) + 1.0;
+                    baseValue = Math.min(bcSize - alphSize, Math.floor(baseValue) + 1.0);
                 }
             }
 

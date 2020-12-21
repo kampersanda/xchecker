@@ -1,6 +1,6 @@
 # xchecker
 
-ゲームリンク：https://kampersanda.github.io/xchecker/app/
+ゲームリンク：[https://kampersanda.github.io/xchecker/app/](https://kampersanda.github.io/xchecker/app/)
 
 与えられたトライ木からダブル配列を構築するゲームです。Typescript+PIXI.jsで書いています。
 

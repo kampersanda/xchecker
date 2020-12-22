@@ -755,9 +755,9 @@ namespace PlayMode {
         } else if (elapsed <= 20.0) {
             return '二乗時間';
         } else if (elapsed <= 30.0) {
-            return '階乗時間';
+            return '指数時間';
         }
-        return 'E';
+        return '階乗時間';
     }
 } // PlayMode
 

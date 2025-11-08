@@ -41,5 +41,5 @@ npx serve app
 
 ### 3. **フォント**
 
-ゲーム内で使う `MPLUSRounded1c` は `font/` 以下に `.ttf` を置き、`app/font.css` 経由で `WebFont.load()` から読み込まれます。
-別フォントに差し替える場合は `font/` の実体と `app/font.css`、および `src/constants.ts` の `FONT_FAMILY` を併せて更新してください。
+ゲーム内で使う `MPLUSRounded1c` は `app/font/` 以下に `.ttf` を置き、`app/font.css` 経由で `WebFont.load()` から読み込まれます。
+別フォントに差し替える場合は `app/font/` の実体と `app/font.css`、および `src/constants.ts` の `FONT_FAMILY` を併せて更新してください。

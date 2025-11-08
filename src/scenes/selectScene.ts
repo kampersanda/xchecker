@@ -15,8 +15,8 @@ interface SelectSceneOptions {
     keys: Pick<GameKeys, "enter" | "left" | "right">;
 }
 
-const MainWidth = 600;
-const MainHeight = 600;
+const MAIN_WIDTH = 600;
+const MAIN_HEIGHT = 600;
 
 /**
  * Scene that displays difficulty choices and descriptive text.
@@ -50,7 +50,7 @@ export class SelectScene implements SceneController {
         const frame = new PIXI.Graphics()
             .lineStyle(10, 0x000000)
             .beginFill(0xffffff)
-            .drawRect(0, 0, MainWidth, MainHeight)
+            .drawRect(0, 0, MAIN_WIDTH, MAIN_HEIGHT)
             .endFill();
         container.addChild(frame);
 
@@ -60,27 +60,27 @@ export class SelectScene implements SceneController {
         container.addChild(titleText);
 
         this.easyText = new PIXI.Text('Easy', { fontFamily: TEXT_STYLE.fontFamily, fontSize: 44, fill: Palette.Blue });
-        this.easyText.position.set(MainWidth / 4 + 20, 240);
+        this.easyText.position.set(MAIN_WIDTH / 4 + 20, 240);
         this.easyText.anchor.set(0.5, 0.5);
         container.addChild(this.easyText);
 
         this.hardText = new PIXI.Text('Hard', { fontFamily: TEXT_STYLE.fontFamily, fontSize: 44, fill: Palette.Red });
-        this.hardText.position.set(MainWidth / 4 * 3 - 20, 240);
+        this.hardText.position.set(MAIN_WIDTH / 4 * 3 - 20, 240);
         this.hardText.anchor.set(0.5, 0.5);
         container.addChild(this.hardText);
 
         this.indicatorText = new PIXI.Text('Press Enter', { fontFamily: TEXT_STYLE.fontFamily, fontSize: 32 });
-        this.indicatorText.position.set(MainWidth / 2, 330);
+        this.indicatorText.position.set(MAIN_WIDTH / 2, 330);
         this.indicatorText.anchor.set(0.5, 0.5);
         container.addChild(this.indicatorText);
 
         const descText = new PIXI.Text(SELECT_DESCRIPTION, { fontFamily: TEXT_STYLE.fontFamily, fontSize: 26, fill: Palette.Black, align: 'center' });
-        descText.position.set(MainWidth / 2, 400);
+        descText.position.set(MAIN_WIDTH / 2, 400);
         descText.anchor.set(0.5, 0);
         container.addChild(descText);
 
         const licenseText = new PIXI.Text('Created by Kampersanda', { fontFamily: TEXT_STYLE.fontFamily, fontSize: 26, fill: '#808080' });
-        licenseText.position.set(MainWidth / 2, 550);
+        licenseText.position.set(MAIN_WIDTH / 2, 550);
         licenseText.anchor.set(0.5, 0);
         container.addChild(licenseText);
 

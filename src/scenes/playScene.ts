@@ -18,24 +18,24 @@ interface PlaySceneOptions {
     settings: PlaySettings;
 }
 
-const InfoWidth = 1000;
-const InfoHeight = 150;
+const INFO_WIDTH = 1000;
+const INFO_HEIGHT = 150;
 
-const TrieWidth = 1200;
-const TrieHeight = 380;
+const TRIE_WIDTH = 1200;
+const TRIE_HEIGHT = 380;
 
-const TargetTopMargin = 15;
+const TARGET_TOP_MARGIN = 15;
 
-const TargetHeight = 100;
+const TARGET_HEIGHT = 100;
 
-const ElemWidth = 50;
-const ElemHeight = 50;
-const IndexHeightOffset = ElemHeight * 0.15;
+const ELEM_WIDTH = 50;
+const ELEM_HEIGHT = 50;
+const INDEX_HEIGHT_OFFSET = ELEM_HEIGHT * 0.15;
 
-const BcHeaderWidth = 2.2 * ElemWidth;
+const BC_HEADER_WIDTH = 2.2 * ELEM_WIDTH;
 
-const NodeRadius = 25;
-const NodeMargin = 100;
+const NODE_RADIUS = 25;
+const NODE_MARGIN = 100;
 
 enum GameState { Playing, Succeed, Failed, ToNext }
 
@@ -102,16 +102,16 @@ export class PlayScene implements SceneController {
 
         this.infoContainer = new PIXI.Container();
         this.timerText = createText();
-        this.timerText.position.set(0, InfoHeight / 2);
+        this.timerText.position.set(0, INFO_HEIGHT / 2);
         this.timerText.anchor.set(0.0, 0.5);
         this.infoContainer.addChild(this.timerText);
 
         const helpText = createText('移動：左右キー\n配置：下キー\n戻る：ENTER');
-        helpText.position.set(InfoWidth, InfoHeight / 2);
+        helpText.position.set(INFO_WIDTH, INFO_HEIGHT / 2);
         helpText.anchor.set(1.0, 0.5);
         this.infoContainer.addChild(helpText);
 
-        this.infoContainer.pivot.set(InfoWidth / 2, 0);
+        this.infoContainer.pivot.set(INFO_WIDTH / 2, 0);
         this.infoContainer.position.set(this.app.renderer.width / 2, 0);
 
         const [, edgeLists] = TRIE.makeSolutions(bcSize, alphSize);
@@ -137,30 +137,30 @@ export class PlayScene implements SceneController {
         }
 
         this.trieContainer.pivot.set(this.trieContainer.width / 2, 0);
-        this.trieContainer.position.set(this.app.renderer.width / 2, InfoHeight);
-        if (this.trieContainer.height > TrieHeight) {
-            const scale = TrieHeight / this.trieContainer.height;
+        this.trieContainer.position.set(this.app.renderer.width / 2, INFO_HEIGHT);
+        if (this.trieContainer.height > TRIE_HEIGHT) {
+            const scale = TRIE_HEIGHT / this.trieContainer.height;
             this.trieContainer.scale.set(scale, scale);
-        } else if (this.trieContainer.width > TrieWidth) {
-            const scale = TrieWidth / this.trieContainer.width;
+        } else if (this.trieContainer.width > TRIE_WIDTH) {
+            const scale = TRIE_WIDTH / this.trieContainer.width;
             this.trieContainer.scale.set(scale, scale);
         }
 
         const bcHeaderContainer = new PIXI.Container();
-        bcHeaderContainer.position.set(0, ElemHeight);
-        this.bcHeaderTexts = this.drawArrayHeaderTexts(["BASE", "CHECK"], BcHeaderWidth, bcHeaderContainer);
+        bcHeaderContainer.position.set(0, ELEM_HEIGHT);
+        this.bcHeaderTexts = this.drawArrayHeaderTexts(["BASE", "CHECK"], BC_HEADER_WIDTH, bcHeaderContainer);
 
         const bcIndexContainer = new PIXI.Container();
-        bcIndexContainer.position.set(BcHeaderWidth, IndexHeightOffset);
+        bcIndexContainer.position.set(BC_HEADER_WIDTH, INDEX_HEIGHT_OFFSET);
         this.bcIndexTexts = this.drawArrayIndexTexts(bcSize, false, bcIndexContainer);
 
         const baseBodyContainer = new PIXI.Container();
-        baseBodyContainer.position.set(BcHeaderWidth, ElemHeight);
+        baseBodyContainer.position.set(BC_HEADER_WIDTH, ELEM_HEIGHT);
         this.baseBodyGraphics = this.drawArrayBodyGraphics(bcSize, baseBodyContainer);
         this.baseBodyTexts = this.drawArrayBodyTexts(bcSize, baseBodyContainer);
 
         const checkBodyContainer = new PIXI.Container();
-        checkBodyContainer.position.set(BcHeaderWidth, 2 * ElemHeight);
+        checkBodyContainer.position.set(BC_HEADER_WIDTH, 2 * ELEM_HEIGHT);
         this.checkBodyGraphics = this.drawArrayBodyGraphics(bcSize, checkBodyContainer);
         this.checkBodyTexts = this.drawArrayBodyTexts(bcSize, checkBodyContainer);
 
@@ -170,23 +170,23 @@ export class PlayScene implements SceneController {
         this.bcContainer.addChild(baseBodyContainer);
         this.bcContainer.addChild(checkBodyContainer);
         this.bcContainer.pivot.set(this.bcContainer.width / 2, 0);
-        this.bcContainer.position.set(this.app.renderer.width / 2, InfoHeight + TrieHeight + TargetTopMargin + TargetHeight);
+        this.bcContainer.position.set(this.app.renderer.width / 2, INFO_HEIGHT + TRIE_HEIGHT + TARGET_TOP_MARGIN + TARGET_HEIGHT);
 
         this.targetContainer = new PIXI.Container();
         const targetIndexContainer = new PIXI.Container();
-        targetIndexContainer.position.set(0, IndexHeightOffset);
+        targetIndexContainer.position.set(0, INDEX_HEIGHT_OFFSET);
         const targetBodyContainer = new PIXI.Container();
         this.targetIndexTexts = this.drawArrayIndexTexts(alphSize, true, targetIndexContainer);
         this.targetBodyGraphics = this.drawArrayBodyGraphics(alphSize, targetBodyContainer);
         this.targetBodyTexts = this.drawArrayBodyTexts(alphSize, targetBodyContainer);
-        targetBodyContainer.position.set(0, ElemHeight);
+        targetBodyContainer.position.set(0, ELEM_HEIGHT);
         this.targetContainer.addChild(targetIndexContainer);
         this.targetContainer.addChild(targetBodyContainer);
 
         if (this.bcContainer) {
-            this.targetXOrigin = this.bcContainer.position.x - this.bcContainer.pivot.x + BcHeaderWidth;
+            this.targetXOrigin = this.bcContainer.position.x - this.bcContainer.pivot.x + BC_HEADER_WIDTH;
         }
-        this.targetContainer.position.set(this.targetXOrigin, InfoHeight + TrieHeight + TargetTopMargin);
+        this.targetContainer.position.set(this.targetXOrigin, INFO_HEIGHT + TRIE_HEIGHT + TARGET_TOP_MARGIN);
 
         this.mainContainer = new PIXI.Container();
         if (this.infoContainer) {
@@ -294,7 +294,7 @@ export class PlayScene implements SceneController {
                     this.baseBodyTexts[curr.bcPos].text = `${baseInt}`;
                     this.baseBodyTexts[curr.bcPos].style.fill = this.insertable ? Palette.Blue : Palette.Red;
                     if (this.targetContainer) {
-                        this.targetContainer.x = baseInt * ElemWidth + this.targetXOrigin;
+                        this.targetContainer.x = baseInt * ELEM_WIDTH + this.targetXOrigin;
                     }
                 }
             }
@@ -317,7 +317,7 @@ export class PlayScene implements SceneController {
             if (this.gameState === GameState.Succeed) {
                 this.timerText.style.fill = Palette.Blue;
                 const resText = new PIXI.Text(`${this.getRank(elapsed)}`, { fontFamily: TEXT_STYLE.fontFamily, fontSize: 64, fill: Palette.Blue });
-                resText.position.set(InfoWidth / 2 - 80, InfoHeight / 2);
+                resText.position.set(INFO_WIDTH / 2 - 80, INFO_HEIGHT / 2);
                 resText.anchor.set(0.0, 0.5);
                 this.infoContainer.addChild(resText);
 
@@ -327,7 +327,7 @@ export class PlayScene implements SceneController {
                 this.infoContainer.addChild(auxText);
             } else {
                 const resText = new PIXI.Text('負け', { fontFamily: TEXT_STYLE.fontFamily, fontSize: 64, fill: Palette.Red });
-                resText.position.set(InfoWidth / 2 + 30, InfoHeight / 2);
+                resText.position.set(INFO_WIDTH / 2 + 30, INFO_HEIGHT / 2);
                 resText.anchor.set(0.0, 0.5);
                 this.infoContainer.addChild(resText);
 
@@ -369,13 +369,13 @@ export class PlayScene implements SceneController {
             if (!curr) {
                 break;
             }
-            const x = curr.node.offset * NodeMargin + (NodeMargin / 2);
-            const y = curr.node.level * NodeMargin + (NodeMargin / 2);
+            const x = curr.node.offset * NODE_MARGIN + (NODE_MARGIN / 2);
+            const y = curr.node.level * NODE_MARGIN + (NODE_MARGIN / 2);
 
             this.nodeGraphics[curr.node.nodeId] = new PIXI.Graphics()
                 .lineStyle(3, 0x000000)
                 .beginFill(0xffffff)
-                .drawCircle(x, y, NodeRadius)
+                .drawCircle(x, y, NODE_RADIUS)
                 .endFill();
 
             this.nodeTexts[curr.node.nodeId] = createText(`${curr.node.nodeId}`);
@@ -389,12 +389,12 @@ export class PlayScene implements SceneController {
                     .lineStyle(3, 0x000000)
                     .moveTo(pt.x, pt.y)
                     .lineTo(nt.x, pt.y)
-                    .lineTo(nt.x, nt.y - NodeRadius)
-                    .lineTo(nt.x - NodeRadius / 3, nt.y - NodeRadius - NodeRadius / 2.5)
-                    .moveTo(nt.x + NodeRadius / 3, nt.y - NodeRadius - NodeRadius / 2.5)
-                    .lineTo(nt.x, nt.y - NodeRadius);
+                    .lineTo(nt.x, nt.y - NODE_RADIUS)
+                    .lineTo(nt.x - NODE_RADIUS / 3, nt.y - NODE_RADIUS - NODE_RADIUS / 2.5)
+                    .moveTo(nt.x + NODE_RADIUS / 3, nt.y - NODE_RADIUS - NODE_RADIUS / 2.5)
+                    .lineTo(nt.x, nt.y - NODE_RADIUS);
                 this.edgeTexts[curr.node.nodeId] = createText(`${CODE_TABLE[curr.node.inEdge]}`);
-                this.edgeTexts[curr.node.nodeId].position.set(x - (NodeMargin / 4.5), y - (NodeMargin / 1.8));
+                this.edgeTexts[curr.node.nodeId].position.set(x - (NODE_MARGIN / 4.5), y - (NODE_MARGIN / 1.8));
                 this.edgeTexts[curr.node.nodeId].anchor.set(0.5, 0.5);
             }
 
@@ -411,7 +411,7 @@ export class PlayScene implements SceneController {
         const objs = new Array<PIXI.Text>(names.length);
         for (let j = 0; j < names.length; j++) {
             const x = width / 2;
-            const y = j * ElemHeight + (ElemHeight / 2);
+            const y = j * ELEM_HEIGHT + (ELEM_HEIGHT / 2);
             objs[j] = createText(names[j]);
             objs[j].position.set(x, y);
             objs[j].anchor.set(0.5, 0.5);
@@ -426,10 +426,10 @@ export class PlayScene implements SceneController {
     private drawArrayIndexTexts(size: number, isCode: boolean, container: PIXI.Container) {
         const objs = new Array<PIXI.Text>(size);
         for (let i = 0; i < size; i++) {
-            const x = i * ElemWidth;
+            const x = i * ELEM_WIDTH;
             const idx = isCode ? `${CODE_TABLE[i]}` : `${i}`;
             objs[i] = createText(idx);
-            objs[i].position.set(x + (ElemWidth / 2), ElemHeight / 2);
+            objs[i].position.set(x + (ELEM_WIDTH / 2), ELEM_HEIGHT / 2);
             objs[i].anchor.set(0.5, 0.5);
             container.addChild(objs[i]);
         }
@@ -442,9 +442,9 @@ export class PlayScene implements SceneController {
     private drawArrayBodyTexts(size: number, container: PIXI.Container) {
         const objs = new Array<PIXI.Text>(size);
         for (let i = 0; i < size; i++) {
-            const x = i * ElemWidth;
+            const x = i * ELEM_WIDTH;
             objs[i] = createText();
-            objs[i].position.set(x + (ElemWidth / 2), ElemHeight / 2);
+            objs[i].position.set(x + (ELEM_WIDTH / 2), ELEM_HEIGHT / 2);
             objs[i].anchor.set(0.5, 0.5);
             container.addChild(objs[i]);
         }
@@ -457,11 +457,11 @@ export class PlayScene implements SceneController {
     private drawArrayBodyGraphics(size: number, container: PIXI.Container) {
         const objs = new Array<PIXI.Graphics>(size);
         for (let i = 0; i < size; i++) {
-            const x = i * ElemWidth;
+            const x = i * ELEM_WIDTH;
             objs[i] = new PIXI.Graphics()
                 .lineStyle(3, 0x000000)
                 .beginFill(0xffffff)
-                .drawRect(x, 0, ElemWidth, ElemHeight)
+                .drawRect(x, 0, ELEM_WIDTH, ELEM_HEIGHT)
                 .endFill();
             container.addChild(objs[i]);
         }

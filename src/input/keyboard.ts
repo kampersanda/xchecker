@@ -1,5 +1,11 @@
+/**
+ * Keyboard helper utilities for mapping DOM events into scene-friendly bindings.
+ */
 export type KeyHandler = () => void;
 
+/**
+ * Runtime state tracked for a single key binding.
+ */
 export interface KeyBinding {
     value: string;
     isDown: boolean;
@@ -10,6 +16,9 @@ export interface KeyBinding {
     unsubscribe: () => void;
 }
 
+/**
+ * Convenience bundle of the keys used across the game.
+ */
 export interface GameKeys {
     enter: KeyBinding;
     left: KeyBinding;
@@ -17,6 +26,9 @@ export interface GameKeys {
     down: KeyBinding;
 }
 
+/**
+ * Creates a key binding that toggles state and optional callbacks on DOM events.
+ */
 export function createKey(value: string, press?: KeyHandler, release?: KeyHandler): KeyBinding {
     const key: KeyBinding = {
         value,

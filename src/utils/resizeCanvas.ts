@@ -1,5 +1,11 @@
+/**
+ * Responsive canvas helpers for keeping the PIXI stage within the viewport.
+ */
 import * as PIXI from "pixi.js";
 
+/**
+ * Resizes the renderer view proportionally so it fits in the browser window.
+ */
 export function resizeCanvas(app: PIXI.Application, defaultWidth: number, defaultHeight: number) {
     let canvasWidth = defaultWidth;
     let canvasHeight = defaultHeight;

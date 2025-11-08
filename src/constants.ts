@@ -1,3 +1,6 @@
+/**
+ * Centralized styling, layout, and gameplay constants shared across scenes.
+ */
 import * as PIXI from "pixi.js";
 
 export const CANVAS = {

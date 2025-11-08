@@ -1,9 +1,15 @@
+/**
+ * Implements the difficulty selection scene and transitions into the play scene.
+ */
 import * as PIXI from "pixi.js";
 
 import { DifficultyLevel, DifficultyPresets, Palette, SELECT_DESCRIPTION, TEXT_STYLE, TITLE_FAMILY } from "../constants";
 import { GameKeys } from "../input/keyboard";
 import { PlaySettings, RUNNING_UPDATE, SceneController, SceneUpdate } from "./types";
 
+/**
+ * Initialization parameters for the SelectScene controller.
+ */
 interface SelectSceneOptions {
     app: PIXI.Application;
     keys: Pick<GameKeys, "enter" | "left" | "right">;
@@ -12,6 +18,9 @@ interface SelectSceneOptions {
 const MainWidth = 600;
 const MainHeight = 600;
 
+/**
+ * Scene that displays difficulty choices and descriptive text.
+ */
 export class SelectScene implements SceneController {
     private readonly app: PIXI.Application;
     private readonly keys: Pick<GameKeys, "enter" | "left" | "right">;
@@ -24,11 +33,17 @@ export class SelectScene implements SceneController {
     private counter = 0;
     private difficulty = DifficultyLevel.Easy;
 
+    /**
+     * Stores references to PIXI and keyboard dependencies.
+     */
     constructor(options: SelectSceneOptions) {
         this.app = options.app;
         this.keys = options.keys;
     }
 
+    /**
+     * Creates PIXI display objects for titles, buttons, and help text.
+     */
     setup(): void {
         const container = new PIXI.Container();
 
@@ -79,6 +94,9 @@ export class SelectScene implements SceneController {
         this.applyDifficultyStyles();
     }
 
+    /**
+     * Handles blinking indicators, keyboard input, and scene transitions.
+     */
     update(delta: number): SceneUpdate {
         if (!this.container) {
             return RUNNING_UPDATE;
@@ -110,6 +128,9 @@ export class SelectScene implements SceneController {
         return RUNNING_UPDATE;
     }
 
+    /**
+     * Removes PIXI resources allocated by the scene.
+     */
     destroy(): void {
         if (!this.container) {
             return;
@@ -119,6 +140,9 @@ export class SelectScene implements SceneController {
         this.container = undefined;
     }
 
+    /**
+     * Updates the text styling to reflect the currently highlighted difficulty.
+     */
     private applyDifficultyStyles() {
         if (!this.easyText || !this.hardText) {
             return;
@@ -130,6 +154,9 @@ export class SelectScene implements SceneController {
         this.hardText.style.fontSize = isEasy ? 44 : 64;
     }
 
+    /**
+     * Converts the selected difficulty into the settings consumed by PlayScene.
+     */
     private currentSettings(): PlaySettings {
         const preset = DifficultyPresets[this.difficulty];
         return { bcSize: preset.bcSize, alphSize: preset.alphSize };

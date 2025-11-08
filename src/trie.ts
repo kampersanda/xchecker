@@ -1,5 +1,11 @@
+/**
+ * Utilities for generating randomized trie layouts and rendering metadata.
+ */
 import * as PIXI from "pixi.js"
 
+/**
+ * Returns a shuffled copy of the provided array using Fisher-Yates.
+ */
 function shuffle<T>(array: T[]) {
     const out = Array.from(array);
     for (let i = out.length - 1; i > 0; i--) {
@@ -11,13 +17,23 @@ function shuffle<T>(array: T[]) {
     return out;
 }
 
+/**
+ * Generates a random integer in the range [min, max).
+ */
 function getRandomInt(min: number, max: number) {
     return Math.floor(Math.random() * Math.floor(max - min)) + min;
 }
+/**
+ * Computes the inclusive distance between two indices.
+ */
 function getRangeSize(min: number, max: number) {
     return max - min + 1;
 }
 
+/**
+ * Builds random base/check placement candidates for the requested sizes.
+ * Returns a tuple containing position lists and derived edge lists.
+ */
 export function makeSolutions(bcSize: number, alphSize: number) {
     let permutation = new Array<number>(bcSize - 1);
     for (let i = 1; i < bcSize; i++) {
@@ -105,6 +121,9 @@ export function makeSolutions(bcSize: number, alphSize: number) {
     return [posLists, edgeLists];
 }
 
+/**
+ * Light-weight trie node representation decorated with rendering metadata.
+ */
 export class Node {
     size: number;
     level: number;
@@ -120,11 +139,17 @@ export class Node {
         this.offset = 0;
         this.inEdge = inEdge;
     }
+    /**
+     * Whether the node has no children.
+     */
     isLeaf() {
         return this.edges.length == 0;
     }
 }
 
+/**
+ * Builds a trie structure from the previously generated edge lists.
+ */
 export function makeTrie(edgeLists: Array<Array<number>>) {
     let nextNodeId = 0;
     let root = new Node(0, nextNodeId++, -1);
@@ -167,6 +192,9 @@ export function makeTrie(edgeLists: Array<Array<number>>) {
     return root;
 }
 
+/**
+ * Recursively populates aggregate subtree sizes for each node.
+ */
 function setSubtreeSize(node: Node) {
     if (node.edges.length == 0) {
         node.size = 1;

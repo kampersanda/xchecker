@@ -1,3 +1,6 @@
+/**
+ * Implements the interactive play scene where players build a double-array trie.
+ */
 import * as PIXI from "pixi.js";
 
 import { CODE_TABLE, Palette, TEXT_STYLE } from "../constants";
@@ -6,6 +9,9 @@ import { createTimer, Timer } from "../utils/timer";
 import * as TRIE from "../trie";
 import { PlaySettings, RUNNING_UPDATE, SceneController, SceneUpdate } from "./types";
 
+/**
+ * Initialization options required for the PlayScene controller.
+ */
 interface PlaySceneOptions {
     app: PIXI.Application;
     keys: GameKeys;
@@ -33,8 +39,14 @@ const NodeMargin = 100;
 
 enum GameState { Playing, Succeed, Failed, ToNext }
 
+/**
+ * Convenience factory for text nodes that start from the shared text style.
+ */
 const createText = (text = '') => new PIXI.Text(text, TEXT_STYLE.clone());
 
+/**
+ * Scene controller that renders the trie construction puzzle and handles input.
+ */
 export class PlayScene implements SceneController {
     private readonly app: PIXI.Application;
     private readonly keys: GameKeys;
@@ -73,12 +85,18 @@ export class PlayScene implements SceneController {
     private timer: Timer = createTimer();
     private gameState = GameState.Playing;
 
+    /**
+     * Sets up references to PIXI primitives and user-selected settings.
+     */
     constructor(options: PlaySceneOptions) {
         this.app = options.app;
         this.keys = options.keys;
         this.settings = options.settings;
     }
 
+    /**
+     * Builds all PIXI containers needed for the scene and initializes state.
+     */
     setup(): void {
         const { bcSize, alphSize } = this.settings;
 
@@ -215,6 +233,9 @@ export class PlayScene implements SceneController {
         this.gameState = GameState.Playing;
     }
 
+    /**
+     * Advances timers, handles user input, and returns scene transition intents.
+     */
     update(delta: number): SceneUpdate {
         if (!this.mainContainer) {
             return RUNNING_UPDATE;
@@ -321,6 +342,9 @@ export class PlayScene implements SceneController {
         return RUNNING_UPDATE;
     }
 
+    /**
+     * Tears down PIXI objects created by the scene.
+     */
     destroy(): void {
         if (!this.mainContainer) {
             return;
@@ -330,6 +354,9 @@ export class PlayScene implements SceneController {
         this.mainContainer = undefined;
     }
 
+    /**
+     * Generates PIXI graphics to visualize the trie topology.
+     */
     private drawTrie(root: TRIE.Node, numNodes: number) {
         this.nodeGraphics = new Array<PIXI.Graphics>(numNodes);
         this.nodeTexts = new Array<PIXI.Text>(numNodes);
@@ -377,6 +404,9 @@ export class PlayScene implements SceneController {
         }
     }
 
+    /**
+     * Draws labels for stacked PIXI array sections such as BASE/CHECK.
+     */
     private drawArrayHeaderTexts(names: Array<string>, width: number, container: PIXI.Container) {
         const objs = new Array<PIXI.Text>(names.length);
         for (let j = 0; j < names.length; j++) {
@@ -390,6 +420,9 @@ export class PlayScene implements SceneController {
         return objs;
     }
 
+    /**
+     * Renders either numeric or code indices above array slots.
+     */
     private drawArrayIndexTexts(size: number, isCode: boolean, container: PIXI.Container) {
         const objs = new Array<PIXI.Text>(size);
         for (let i = 0; i < size; i++) {
@@ -403,6 +436,9 @@ export class PlayScene implements SceneController {
         return objs;
     }
 
+    /**
+     * Creates text objects representing the contents of an array row.
+     */
     private drawArrayBodyTexts(size: number, container: PIXI.Container) {
         const objs = new Array<PIXI.Text>(size);
         for (let i = 0; i < size; i++) {
@@ -415,6 +451,9 @@ export class PlayScene implements SceneController {
         return objs;
     }
 
+    /**
+     * Draws bordered rectangles representing array cells.
+     */
     private drawArrayBodyGraphics(size: number, container: PIXI.Container) {
         const objs = new Array<PIXI.Graphics>(size);
         for (let i = 0; i < size; i++) {
@@ -429,6 +468,9 @@ export class PlayScene implements SceneController {
         return objs;
     }
 
+    /**
+     * Determines whether there is at least one future placement that avoids collisions.
+     */
     private checkContinuability() {
         for (let base = 0; base <= this.settings.bcSize - this.settings.alphSize; base++) {
             let insertable = true;
@@ -448,6 +490,9 @@ export class PlayScene implements SceneController {
         return false;
     }
 
+    /**
+     * Commits the current base position and updates the board with inserted nodes.
+     */
     private insertNodes() {
         const curr = this.traverser[0];
         if (!curr) {
@@ -499,6 +544,9 @@ export class PlayScene implements SceneController {
         }
     }
 
+    /**
+     * Maps the elapsed seconds to a playful complexity-themed rank.
+     */
     private getRank(elapsed: number) {
         if (elapsed <= 3.0) {
             return '定数時間';

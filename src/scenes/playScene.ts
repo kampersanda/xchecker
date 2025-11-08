@@ -33,6 +33,8 @@ const NodeMargin = 100;
 
 enum GameState { Playing, Succeed, Failed, ToNext }
 
+const createText = (text = '') => new PIXI.Text(text, TEXT_STYLE.clone());
+
 export class PlayScene implements SceneController {
     private readonly app: PIXI.Application;
     private readonly keys: GameKeys;
@@ -81,12 +83,12 @@ export class PlayScene implements SceneController {
         const { bcSize, alphSize } = this.settings;
 
         this.infoContainer = new PIXI.Container();
-        this.timerText = new PIXI.Text('', TEXT_STYLE);
+        this.timerText = createText();
         this.timerText.position.set(0, InfoHeight / 2);
         this.timerText.anchor.set(0.0, 0.5);
         this.infoContainer.addChild(this.timerText);
 
-        const helpText = new PIXI.Text('移動：左右キー\n配置：下キー\n戻る：ENTER', TEXT_STYLE);
+        const helpText = createText('移動：左右キー\n配置：下キー\n戻る：ENTER');
         helpText.position.set(InfoWidth, InfoHeight / 2);
         helpText.anchor.set(1.0, 0.5);
         this.infoContainer.addChild(helpText);
@@ -349,7 +351,7 @@ export class PlayScene implements SceneController {
                 .drawCircle(x, y, NodeRadius)
                 .endFill();
 
-            this.nodeTexts[curr.node.nodeId] = new PIXI.Text(`${curr.node.nodeId}`, TEXT_STYLE);
+            this.nodeTexts[curr.node.nodeId] = createText(`${curr.node.nodeId}`);
             this.nodeTexts[curr.node.nodeId].position.set(x, y);
             this.nodeTexts[curr.node.nodeId].anchor.set(0.5, 0.5);
 
@@ -364,7 +366,7 @@ export class PlayScene implements SceneController {
                     .lineTo(nt.x - NodeRadius / 3, nt.y - NodeRadius - NodeRadius / 2.5)
                     .moveTo(nt.x + NodeRadius / 3, nt.y - NodeRadius - NodeRadius / 2.5)
                     .lineTo(nt.x, nt.y - NodeRadius);
-                this.edgeTexts[curr.node.nodeId] = new PIXI.Text(`${CODE_TABLE[curr.node.inEdge]}`, TEXT_STYLE);
+                this.edgeTexts[curr.node.nodeId] = createText(`${CODE_TABLE[curr.node.inEdge]}`);
                 this.edgeTexts[curr.node.nodeId].position.set(x - (NodeMargin / 4.5), y - (NodeMargin / 1.8));
                 this.edgeTexts[curr.node.nodeId].anchor.set(0.5, 0.5);
             }
@@ -380,7 +382,7 @@ export class PlayScene implements SceneController {
         for (let j = 0; j < names.length; j++) {
             const x = width / 2;
             const y = j * ElemHeight + (ElemHeight / 2);
-            objs[j] = new PIXI.Text(names[j], TEXT_STYLE);
+            objs[j] = createText(names[j]);
             objs[j].position.set(x, y);
             objs[j].anchor.set(0.5, 0.5);
             container.addChild(objs[j]);
@@ -393,7 +395,7 @@ export class PlayScene implements SceneController {
         for (let i = 0; i < size; i++) {
             const x = i * ElemWidth;
             const idx = isCode ? `${CODE_TABLE[i]}` : `${i}`;
-            objs[i] = new PIXI.Text(idx, TEXT_STYLE);
+            objs[i] = createText(idx);
             objs[i].position.set(x + (ElemWidth / 2), ElemHeight / 2);
             objs[i].anchor.set(0.5, 0.5);
             container.addChild(objs[i]);
@@ -405,7 +407,7 @@ export class PlayScene implements SceneController {
         const objs = new Array<PIXI.Text>(size);
         for (let i = 0; i < size; i++) {
             const x = i * ElemWidth;
-            objs[i] = new PIXI.Text('', TEXT_STYLE);
+            objs[i] = createText();
             objs[i].position.set(x + (ElemWidth / 2), ElemHeight / 2);
             objs[i].anchor.set(0.5, 0.5);
             container.addChild(objs[i]);

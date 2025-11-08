@@ -36,7 +36,7 @@ export interface DifficultyPreset {
     alphSize: number;
 }
 
-export const DifficultyPresets: Record<DifficultyLevel, DifficultyPreset> = {
+export const DIFFICULTY_PRESETS: Record<DifficultyLevel, DifficultyPreset> = {
     [DifficultyLevel.Easy]: { level: DifficultyLevel.Easy, bcSize: 16, alphSize: 4 },
     [DifficultyLevel.Hard]: { level: DifficultyLevel.Hard, bcSize: 20, alphSize: 6 },
 };

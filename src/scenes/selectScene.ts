@@ -3,7 +3,7 @@
  */
 import * as PIXI from "pixi.js";
 
-import { DifficultyLevel, DifficultyPresets, PALETTE, SELECT_DESCRIPTION, TEXT_STYLE, TITLE_FAMILY } from "../constants";
+import { DifficultyLevel, DIFFICULTY_PRESETS, PALETTE, SELECT_DESCRIPTION, TEXT_STYLE, TITLE_FAMILY } from "../constants";
 import { GameKeys } from "../input/keyboard";
 import { PlaySettings, RUNNING_UPDATE, SceneController, SceneUpdate } from "./types";
 
@@ -158,7 +158,7 @@ export class SelectScene implements SceneController {
      * Converts the selected difficulty into the settings consumed by PlayScene.
      */
     private currentSettings(): PlaySettings {
-        const preset = DifficultyPresets[this.difficulty];
+        const preset = DIFFICULTY_PRESETS[this.difficulty];
         return { bcSize: preset.bcSize, alphSize: preset.alphSize };
     }
 }

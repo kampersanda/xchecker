@@ -17,7 +17,7 @@ export const TEXT_STYLE = new PIXI.TextStyle({
     fill: 0x000000,
 });
 
-export const Palette = {
+export const PALETTE = {
     Black: "#000000",
     White: "#FFFFFF",
     Red: "#ED1C22",

@@ -3,7 +3,7 @@
  */
 import * as PIXI from "pixi.js";
 
-import { DifficultyLevel, DifficultyPresets, Palette, SELECT_DESCRIPTION, TEXT_STYLE, TITLE_FAMILY } from "../constants";
+import { DifficultyLevel, DifficultyPresets, PALETTE, SELECT_DESCRIPTION, TEXT_STYLE, TITLE_FAMILY } from "../constants";
 import { GameKeys } from "../input/keyboard";
 import { PlaySettings, RUNNING_UPDATE, SceneController, SceneUpdate } from "./types";
 
@@ -54,17 +54,17 @@ export class SelectScene implements SceneController {
             .endFill();
         container.addChild(frame);
 
-        const titleText = new PIXI.Text('XCHECKER', { fontFamily: TITLE_FAMILY, fontSize: 80, stroke: Palette.Black, fill: Palette.Black, strokeThickness: 5 });
+        const titleText = new PIXI.Text('XCHECKER', { fontFamily: TITLE_FAMILY, fontSize: 80, stroke: PALETTE.Black, fill: PALETTE.Black, strokeThickness: 5 });
         titleText.position.set(300, 100);
         titleText.anchor.set(0.5, 0.5);
         container.addChild(titleText);
 
-        this.easyText = new PIXI.Text('Easy', { fontFamily: TEXT_STYLE.fontFamily, fontSize: 44, fill: Palette.Blue });
+        this.easyText = new PIXI.Text('Easy', { fontFamily: TEXT_STYLE.fontFamily, fontSize: 44, fill: PALETTE.Blue });
         this.easyText.position.set(MAIN_WIDTH / 4 + 20, 240);
         this.easyText.anchor.set(0.5, 0.5);
         container.addChild(this.easyText);
 
-        this.hardText = new PIXI.Text('Hard', { fontFamily: TEXT_STYLE.fontFamily, fontSize: 44, fill: Palette.Red });
+        this.hardText = new PIXI.Text('Hard', { fontFamily: TEXT_STYLE.fontFamily, fontSize: 44, fill: PALETTE.Red });
         this.hardText.position.set(MAIN_WIDTH / 4 * 3 - 20, 240);
         this.hardText.anchor.set(0.5, 0.5);
         container.addChild(this.hardText);
@@ -74,7 +74,7 @@ export class SelectScene implements SceneController {
         this.indicatorText.anchor.set(0.5, 0.5);
         container.addChild(this.indicatorText);
 
-        const descText = new PIXI.Text(SELECT_DESCRIPTION, { fontFamily: TEXT_STYLE.fontFamily, fontSize: 26, fill: Palette.Black, align: 'center' });
+        const descText = new PIXI.Text(SELECT_DESCRIPTION, { fontFamily: TEXT_STYLE.fontFamily, fontSize: 26, fill: PALETTE.Black, align: 'center' });
         descText.position.set(MAIN_WIDTH / 2, 400);
         descText.anchor.set(0.5, 0);
         container.addChild(descText);
@@ -148,9 +148,9 @@ export class SelectScene implements SceneController {
             return;
         }
         const isEasy = this.difficulty === DifficultyLevel.Easy;
-        this.easyText.style.fill = isEasy ? Palette.Blue : Palette.Black;
+        this.easyText.style.fill = isEasy ? PALETTE.Blue : PALETTE.Black;
         this.easyText.style.fontSize = isEasy ? 64 : 44;
-        this.hardText.style.fill = isEasy ? Palette.Black : Palette.Red;
+        this.hardText.style.fill = isEasy ? PALETTE.Black : PALETTE.Red;
         this.hardText.style.fontSize = isEasy ? 44 : 64;
     }
 

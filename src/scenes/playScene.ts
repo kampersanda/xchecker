@@ -3,7 +3,7 @@
  */
 import * as PIXI from "pixi.js";
 
-import { CODE_TABLE, Palette, TEXT_STYLE } from "../constants";
+import { CODE_TABLE, PALETTE, TEXT_STYLE } from "../constants";
 import { GameKeys } from "../input/keyboard";
 import { createTimer, Timer } from "../utils/timer";
 import * as TRIE from "../trie";
@@ -285,14 +285,14 @@ export class PlayScene implements SceneController {
                         this.nodeTexts[e.child.nodeId].visible = true;
                         this.nodeTexts[e.child.nodeId].text = `${dstPos}`;
                         if (this.checkBodyTexts[dstPos].visible) {
-                            this.nodeTexts[e.child.nodeId].style.fill = Palette.Red;
+                            this.nodeTexts[e.child.nodeId].style.fill = PALETTE.Red;
                             this.insertable = false;
                         } else {
-                            this.nodeTexts[e.child.nodeId].style.fill = Palette.Blue;
+                            this.nodeTexts[e.child.nodeId].style.fill = PALETTE.Blue;
                         }
                     }
                     this.baseBodyTexts[curr.bcPos].text = `${baseInt}`;
-                    this.baseBodyTexts[curr.bcPos].style.fill = this.insertable ? Palette.Blue : Palette.Red;
+                    this.baseBodyTexts[curr.bcPos].style.fill = this.insertable ? PALETTE.Blue : PALETTE.Red;
                     if (this.targetContainer) {
                         this.targetContainer.x = baseInt * ELEM_WIDTH + this.targetXOrigin;
                     }
@@ -315,23 +315,23 @@ export class PlayScene implements SceneController {
             }
 
             if (this.gameState === GameState.Succeed) {
-                this.timerText.style.fill = Palette.Blue;
-                const resText = new PIXI.Text(`${this.getRank(elapsed)}`, { fontFamily: TEXT_STYLE.fontFamily, fontSize: 64, fill: Palette.Blue });
+                this.timerText.style.fill = PALETTE.Blue;
+                const resText = new PIXI.Text(`${this.getRank(elapsed)}`, { fontFamily: TEXT_STYLE.fontFamily, fontSize: 64, fill: PALETTE.Blue });
                 resText.position.set(INFO_WIDTH / 2 - 80, INFO_HEIGHT / 2);
                 resText.anchor.set(0.0, 0.5);
                 this.infoContainer.addChild(resText);
 
-                const auxText = new PIXI.Text('まるで', { fontFamily: TEXT_STYLE.fontFamily, fontSize: 32, fill: Palette.Blue });
+                const auxText = new PIXI.Text('まるで', { fontFamily: TEXT_STYLE.fontFamily, fontSize: 32, fill: PALETTE.Blue });
                 auxText.position.set(resText.position.x, resText.position.y - 10);
                 auxText.anchor.set(1.0, 0.5);
                 this.infoContainer.addChild(auxText);
             } else {
-                const resText = new PIXI.Text('負け', { fontFamily: TEXT_STYLE.fontFamily, fontSize: 64, fill: Palette.Red });
+                const resText = new PIXI.Text('負け', { fontFamily: TEXT_STYLE.fontFamily, fontSize: 64, fill: PALETTE.Red });
                 resText.position.set(INFO_WIDTH / 2 + 30, INFO_HEIGHT / 2);
                 resText.anchor.set(0.0, 0.5);
                 this.infoContainer.addChild(resText);
 
-                const auxText = new PIXI.Text('データ構造的に', { fontFamily: TEXT_STYLE.fontFamily, fontSize: 32, fill: Palette.Red });
+                const auxText = new PIXI.Text('データ構造的に', { fontFamily: TEXT_STYLE.fontFamily, fontSize: 32, fill: PALETTE.Red });
                 auxText.position.set(resText.position.x, resText.position.y - 10);
                 auxText.anchor.set(1.0, 0.5);
                 this.infoContainer.addChild(auxText);
@@ -503,7 +503,7 @@ export class PlayScene implements SceneController {
         const baseInt = Math.floor(this.baseValue);
         this.baseBodyTexts[curr.bcPos].visible = true;
         this.baseBodyTexts[curr.bcPos].text = `${baseInt}`;
-        this.baseBodyTexts[curr.bcPos].style.fill = TEXT_STYLE.fill ?? Palette.Black;
+        this.baseBodyTexts[curr.bcPos].style.fill = TEXT_STYLE.fill ?? PALETTE.Black;
         if (TEXT_STYLE.fontSize) {
             this.baseBodyTexts[curr.bcPos].style.fontSize = TEXT_STYLE.fontSize;
         }
@@ -526,7 +526,7 @@ export class PlayScene implements SceneController {
         }
 
         for (const e of curr.node.edges) {
-            this.nodeTexts[e.child.nodeId].style.fill = Palette.Black;
+            this.nodeTexts[e.child.nodeId].style.fill = PALETTE.Black;
         }
 
         for (const e of curr.node.edges) {

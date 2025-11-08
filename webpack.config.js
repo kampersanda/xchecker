@@ -3,7 +3,8 @@ const main = {
     entry: './src/main.ts',
     output: {
         path: __dirname,
-        filename: './app/main.js'
+        filename: './app/main.js',
+        hashFunction: 'xxhash64', // avoids OpenSSL md4 restrictions in Node 17+
     },
     module: {
         rules: [

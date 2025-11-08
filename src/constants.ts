@@ -8,11 +8,11 @@ export const CANVAS = {
 export const FONT_FAMILY = "MPLUSRounded1c-Regular";
 export const TITLE_FAMILY = "\"Comic Sans MS\", cursive, sans-serif";
 
-export const TEXT_STYLE: PIXI.ITextStyle = {
+export const TEXT_STYLE = new PIXI.TextStyle({
     fontFamily: FONT_FAMILY,
     fontSize: 26,
     fill: 0x000000,
-};
+});
 
 export const Palette = {
     Black: "#000000",
